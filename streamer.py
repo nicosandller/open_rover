@@ -3,8 +3,13 @@ import subprocess
 
 app = Flask(__name__)
 
+# width = '1920'
+width = '960'
+# height = '1080'
+height = '540'
+
 def generate_frames():
-    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', '1920', '--height', '1080'],
+    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
     
