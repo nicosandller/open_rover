@@ -6,32 +6,34 @@ app = Flask(__name__)
 def generate_frames():
     process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-'],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Initialize buffer
     buffer = b''
 
-    while True:
-        # Read a chunk from the subprocess stdout
-        chunk = process.stdout.read(1024)
-        if not chunk:
-            break
-        buffer += chunk
+    try:
+        while True:
+            chunk = process.stdout.read(1024)
+            if not chunk:
+                print("No more data from libcamera-vid, breaking loop.")
+                break
+            buffer += chunk
+            end = buffer.find(b'\xff\xd9')
 
-        # Find the end of a frame (FF D9)
-        end = buffer.find(b'\xff\xd9')
+            if end != -1:
+                frame = buffer[:end+2]
+                buffer = buffer[end+2:]
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        if end != -1:
-            # Extract the complete frame
-            frame = buffer[:end+2]
-            buffer = buffer[end+2:]
+            if len(buffer) > 1_000_000:  # Reset if buffer gets too large
+                print("Buffer size exceeded limit, resetting buffer.")
+                buffer = b''
+    except Exception as e:
+        print(f"Error while generating frames: {e}")
+    finally:
+        process.stdout.close()
+        process.stderr.close()
+        process.terminate()
+        print("Subprocess terminated.")
 
-            # Yield the frame with the necessary headers
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-        # Reset buffer if it gets too large without finding a frame
-        if len(buffer) > 1_000_000:  # Arbitrary size limit
-            buffer = b''
 
 @app.route('/')
 def index():
