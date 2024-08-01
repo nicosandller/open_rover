@@ -1,22 +1,15 @@
-from flask import Flask, Response
-import subprocess
+from flask import Flask, render_template, send_from_directory
 
 app = Flask(__name__)
+HLS_DIR = "/home/nico/camera_streamer"
 
 @app.route('/')
 def index():
-    return Response(stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return render_template('index.html')
 
-def stream():
-    # Start the libcamera-vid process to capture video
-    process = subprocess.Popen(['libcamera-vid', '--stdout', '-o', '-'],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    while True:
-        frame = process.stdout.read(4096)  # Adjust the buffer size if needed
-        if not frame:
-            break
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+@app.route('/hls/<path:filename>')
+def hls(filename):
+    return send_from_directory(HLS_DIR, filename)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
