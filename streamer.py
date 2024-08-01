@@ -13,6 +13,7 @@ def generate_frames():
             chunk = process.stdout.read(1024)
             if not chunk:
                 print("No more data from libcamera-vid, breaking loop.")
+                print(process.stderr.read().decode('utf-8'))  # Print stderr output
                 break
             buffer += chunk
             end = buffer.find(b'\xff\xd9')
