@@ -12,11 +12,11 @@ def stream():
     process = subprocess.Popen(['libcamera-vid', '--stdout', '-o', '-'],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while True:
-        frame = process.stdout.read(4096)
-        if len(frame) == 0:
+        frame = process.stdout.read(4096)  # Adjust the buffer size if needed
+        if not frame:
             break
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
