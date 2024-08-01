@@ -4,10 +4,10 @@ import subprocess
 app = Flask(__name__)
 
 def generate_frames():
-    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0'],
+    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', '1920', '--height', '1080'],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
-
+    
     try:
         while True:
             chunk = process.stdout.read(1024)
