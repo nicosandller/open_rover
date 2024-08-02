@@ -36,16 +36,24 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
             # Log the shape and type of the image to ensure correctness
             print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
-            # Convert image to RGB and resize for the model
-            resized = cv2.resize(image, (320, 320))
-            rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-            features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
-            features_list = features.tolist()
+            # Convert image to RGB
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # Extract features from the image using the runner's built-in method
+            features, cropped = runner.get_features_from_image(frame_rgb)
 
             # Run inference and catch any issues during classification
             try:
-                result = runner.classify(features_list)
+                result = runner.classify(features)
                 output_queue.put((frame_number, result))
+                if "bounding_boxes" in result["result"].keys():
+                    print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
+                    for bb in result["result"]["bounding_boxes"]:
+                        print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
+                    
+                    # Save the cropped image for inspection
+                    cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
+
             except Exception as classify_error:
                 print(f"Classification error on frame {frame_number}: {classify_error}")
                 output_queue.put((frame_number, None))
