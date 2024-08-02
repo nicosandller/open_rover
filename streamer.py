@@ -1,11 +1,11 @@
-from flask import Flask, Response
+import queue
 import subprocess
 import cv2
 import numpy as np
+from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
-import sys
 import multiprocessing
-import queue
+import sys
 
 app = Flask(__name__)
 
@@ -19,32 +19,28 @@ if len(sys.argv) < 2:
 
 MODEL_PATH = sys.argv[1]
 
-def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
-    runner = ImageImpulseRunner(model_path)
+def classify_worker(input_queue, output_queue, shared_array_base, array_shape, dtype, lock):
+    runner = ImageImpulseRunner(MODEL_PATH)
     runner.init()
 
     # Attach to the shared array
     shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=dtype).reshape(array_shape)
-    
+
     while True:
         try:
             frame_number = input_queue.get()
             if frame_number is None:  # Sentinel value to end the process
                 break
 
-            # Read from shared array
-            image = shared_array.copy()
-
-            # for debugging
+            # Read from shared array with lock
+            with lock:
+                image = shared_array.copy()
             cv2.imwrite('image_1.jpg', image)
-
             # Log the shape and type of the image to ensure correctness
             print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
             # Convert image to RGB
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-            # for debugging
             cv2.imwrite('image_2.jpg', frame_rgb)
             cv2.imwrite('image_2b.jpg', cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
 
@@ -63,7 +59,7 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
                     print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
                     for bb in result["result"]["bounding_boxes"]:
                         print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
-                    
+
                     # Save the cropped image for inspection
                     cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
@@ -87,12 +83,16 @@ channels = 3  # Assuming 3 channels for an RGB image
 image_shape = (height, width, channels)
 image_dtype = np.uint8
 
-# Create shared array
-shared_array_base = multiprocessing.Array('B', int(np.prod(image_shape)))
+# Create shared array with a lock
+lock = multiprocessing.Lock()
+shared_array_base = multiprocessing.Array('B', int(np.prod(image_shape)), lock=lock)
 shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).reshape(image_shape)
 
 # Start classification process
-classification_process = multiprocessing.Process(target=classify_worker, args=(input_queue, output_queue, MODEL_PATH, image_shape, image_dtype))
+classification_process = multiprocessing.Process(
+    target=classify_worker, 
+    args=(input_queue, output_queue, shared_array_base, image_shape, image_dtype, lock)
+)
 classification_process.start()
 
 def generate_frames():
@@ -135,7 +135,9 @@ def generate_frames():
                 # for debugging
                 cv2.imwrite('image_0.jpg', image)
 
-                shared_array[:] = image[:]
+                # Write to shared array with lock
+                with lock:
+                    shared_array[:] = image[:]
 
                 # Enqueue frame number for classification in a separate process
                 if frame_count % skip_classification == 0:
