@@ -6,6 +6,7 @@ from edge_impulse_linux.runner import ImpulseRunner
 import sys
 import multiprocessing
 import queue
+import os
 
 app = Flask(__name__)
 
@@ -19,15 +20,19 @@ if len(sys.argv) < 2:
 
 MODEL_PATH = sys.argv[1]
 
-# Function to initialize and run classification in a separate process
-def classify_worker(input_queue, output_queue, model_path):
+def classify_worker(input_queue, output_queue, model_path, shm_name, shape, dtype):
     runner = ImpulseRunner(model_path)
     runner.init()
+    shared_mem = multiprocessing.shared_memory.SharedMemory(name=shm_name)
+    shared_array = np.ndarray(shape, dtype=dtype, buffer=shared_mem.buf)
     while True:
         try:
-            frame_number, image = input_queue.get()
+            frame_number = input_queue.get()
             if frame_number is None:  # Sentinel value to end the process
                 break
+
+            # Read from shared memory
+            image = shared_array.copy()
 
             # Convert image to RGB and resize for the model
             resized = cv2.resize(image, (320, 320))
@@ -41,16 +46,23 @@ def classify_worker(input_queue, output_queue, model_path):
         except Exception as e:
             print(f"Error during classification: {e}")
             output_queue.put((frame_number, None))
+    shared_mem.close()
 
-# Queues for communication between processes
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
 
+# Create shared memory block
+image_shape = (height, width, 3)
+image_dtype = np.uint8
+shm = multiprocessing.shared_memory.SharedMemory(create=True, size=np.prod(image_shape) * np.dtype(image_dtype).itemsize)
+shared_array = np.ndarray(image_shape, dtype=image_dtype, buffer=shm.buf)
+
 # Start classification process
-classification_process = multiprocessing.Process(target=classify_worker, args=(input_queue, output_queue, MODEL_PATH))
+classification_process = multiprocessing.Process(target=classify_worker, args=(input_queue, output_queue, MODEL_PATH, shm.name, image_shape, image_dtype))
 classification_process.start()
 
 def generate_frames():
+    global shared_array
     process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
@@ -74,11 +86,12 @@ def generate_frames():
 
                 # Convert frame to numpy array for processing
                 image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
+                shared_array[:] = image[:]
 
-                # Enqueue frame for classification in a separate process
+                # Enqueue frame number for classification in a separate process
                 if frame_count % skip_classification == 0:
                     if not input_queue.full():
-                        input_queue.put((frame_count, image))
+                        input_queue.put(frame_count)
 
                 # Always yield the frame to render it
                 yield (b'--frame\r\n'
@@ -105,8 +118,10 @@ def generate_frames():
         process.stdout.close()
         process.stderr.close()
         process.terminate()
-        input_queue.put((None, None))  # Sentinel to stop the classify_worker process
+        input_queue.put(None)  # Sentinel to stop the classify_worker process
         classification_process.join()
+        shm.close()
+        shm.unlink()  # Clean up shared memory
         print("Subprocess terminated.")
 
 @app.route('/')
