@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 from edge_impulse_linux.runner import ImpulseRunner
 import sys
+import threading
+import queue
 
 app = Flask(__name__)
 
@@ -21,35 +23,37 @@ MODEL_PATH = sys.argv[1]
 runner = ImpulseRunner(MODEL_PATH)
 runner.init()
 
+# Queue to hold frames for classification
+classification_queue = queue.Queue(maxsize=10)
+
 # Error flag to ensure we print the error only once
 error_logged = False
 
-def classify_frame(frame):
-    """
-    Run inference on a frame using the Edge Impulse model.
-    """
+def classify_frames():
     global error_logged
-    try:
-        # Prepare frame for Edge Impulse model
-        resized = cv2.resize(frame, (320, 320))  # Adjust size according to model requirements
-        rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-        features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
+    while True:
+        frame_number, image = classification_queue.get()
+        try:
+            # Convert image to RGB and resize for the model
+            resized = cv2.resize(image, (320, 320))
+            rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+            features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
+            features_list = features.tolist()
 
-        # Check for NaN or infinite values
-        if np.isnan(features).any() or np.isinf(features).any():
-            raise ValueError("Input features contain NaN or infinite values.")
+            # Run inference
+            result = runner.classify(features_list)
+            if result and result['result']['classification']:
+                print(f"Detection in frame {frame_number}: {result['result']['classification']}")
+        except Exception as e:
+            if not error_logged:
+                print(f"Error during classification: {e}")
+                error_logged = True
+        finally:
+            classification_queue.task_done()
 
-        # Convert the ndarray to a list of lists
-        features_list = features.tolist()
-
-        # Run model inference
-        result = runner.classify(features_list)
-        return result
-    except Exception as e:
-        if not error_logged:
-            print(f"Error during classification: {e}")
-            error_logged = True
-        return None
+# Start classification thread
+classification_thread = threading.Thread(target=classify_frames, daemon=True)
+classification_thread.start()
 
 def generate_frames():
     process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
@@ -57,8 +61,7 @@ def generate_frames():
     buffer = b''
 
     frame_count = 0
-    skip_classification = 100  # Number of frames to skip classification
-    max_frame_count = 100000  # Threshold to reset the frame count
+    skip_classification = 30  # Number of frames to skip classification
 
     try:
         while True:
@@ -74,26 +77,19 @@ def generate_frames():
                 frame = buffer[:end+2]
                 buffer = buffer[end+2:]
 
-                # Increment frame counter
-                frame_count += 1
+                # Convert frame to numpy array for processing
+                image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
 
-                # Skip classification if necessary
+                # Enqueue frame for classification in a separate thread
                 if frame_count % skip_classification == 0:
-                    # Convert frame to numpy array for processing
-                    image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
-
-                    # Run inference
-                    detection_result = classify_frame(image)
-                    if detection_result and detection_result['result']['classification']:
-                        print(f"Detection: {detection_result['result']['classification']}")
+                    if not classification_queue.full():
+                        classification_queue.put((frame_count, image))
 
                 # Always yield the frame to render it
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-                # Reset frame count if it reaches max_frame_count to prevent overflow
-                if frame_count >= max_frame_count:
-                    frame_count = 0
+                frame_count += 1
 
             if len(buffer) > 1_000_000:  # Reset if buffer gets too large
                 print("Buffer size exceeded limit, resetting buffer.")
