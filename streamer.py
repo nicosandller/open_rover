@@ -34,14 +34,25 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
             # Read from shared array
             image = shared_array.copy()
 
+            # for debugging
+            cv2.imwrite('image_1.jpg', image)
+
             # Log the shape and type of the image to ensure correctness
             print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
             # Convert image to RGB
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+            # for debugging
+            cv2.imwrite('image_2.jpg', frame_rgb)
+            cv2.imwrite('image_2b.jpg', cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
+
             # Extract features from the image using the runner's built-in method
             features, cropped = runner.get_features_from_image(frame_rgb)
+
+            # for debugging
+            cv2.imwrite('image_3.jpg', cropped)
+            cv2.imwrite('image_3b.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
             # Run inference and catch any issues during classification
             try:
@@ -119,6 +130,9 @@ def generate_frames():
                 if image is None:
                     print(f"Failed to decode frame {frame_count}")
                     continue
+
+                # for debugging
+                cv2.imwrite('image_0.jpg', image)
 
                 shared_array[:] = image[:]
 
