@@ -5,6 +5,7 @@ import numpy as np
 from edge_impulse_linux.image import ImageImpulseRunner
 import sys
 import multiprocessing
+import queue
 
 app = Flask(__name__)
 
