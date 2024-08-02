@@ -8,7 +8,6 @@ import multiprocessing
 
 app = Flask(__name__)
 
-# Set width and height as integers
 width = 960
 height = 540
 
@@ -24,6 +23,7 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
     runner.init()
     array_size = int(np.prod(array_shape))
     shared_array = np.frombuffer(multiprocessing.Array('B', array_size).get_obj(), dtype=dtype).reshape(array_shape)
+    
     while True:
         try:
             frame_number = input_queue.get()
@@ -33,17 +33,25 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
             # Read from shared array
             image = shared_array.copy()
 
+            # Log the shape and type of the image to ensure correctness
+            print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
+
             # Convert image to RGB and resize for the model
             resized = cv2.resize(image, (320, 320))
             rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
             features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
             features_list = features.tolist()
 
-            # Run inference
-            result = runner.classify(features_list)
-            output_queue.put((frame_number, result))
+            # Run inference and catch any issues during classification
+            try:
+                result = runner.classify(features_list)
+                output_queue.put((frame_number, result))
+            except Exception as classify_error:
+                print(f"Classification error on frame {frame_number}: {classify_error}")
+                output_queue.put((frame_number, None))
+
         except Exception as e:
-            print(f"Error during classification: {e}")
+            print(f"Error during classification setup: {e}")
             output_queue.put((frame_number, None))
 
 input_queue = multiprocessing.Queue(maxsize=10)
@@ -68,8 +76,10 @@ classification_process.start()
 
 def generate_frames():
     global shared_array
-    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height)],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(
+                ['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height)],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     buffer = b''
 
     frame_count = 0
@@ -90,7 +100,17 @@ def generate_frames():
                 buffer = buffer[end+2:]
 
                 # Convert frame to numpy array for processing
-                image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
+                try:
+                    image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
+                except Exception as decode_error:
+                    print(f"Error decoding frame {frame_count}: {decode_error}")
+                    continue
+
+                # Ensure the image was decoded correctly
+                if image is None:
+                    print(f"Failed to decode frame {frame_count}")
+                    continue
+
                 shared_array[:] = image[:]
 
                 # Enqueue frame number for classification in a separate process
