@@ -23,6 +23,7 @@ source venv/bin/activate
 
 # Install Flask inside the virtual environment
 pip install Flask
+pip install edge_impulse_linux tflite-runtime
 
 # Print completion message
 echo "Setup complete!!"

@@ -1,11 +1,15 @@
 sudo apt update
 sudo apt upgrade
 
-# wget https://unofficial-builds.nodejs.org/download/release/v12.13.0/node-v12.13.0-linux-armv6l.tar.xz
-# tar xvf node-v12.13.0-linux-armv6l.tar.xz
-# cd node-v12.13.0-linux-armv6l
-# sudo cp -R bin/* /usr/bin/
-# sudo cp -R lib/* /usr/lib/
+
+#increase swap file memory
+free -h
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+free -h
 
 
 # install NVM (node version management)
@@ -25,3 +29,7 @@ source ~/.bashrc
 sudo apt install -y gcc g++ make build-essential sox gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-base-apps
 
 sudo npm install edge-impulse-linux -g --unsafe-perm
+
+# change permisions on file
+sudo chmod +x /usr/local/bin/edge-impulse-linux
+sudo chmod +x /usr/local/bin/edge-impulse-linux-runner
