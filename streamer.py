@@ -55,7 +55,9 @@ def generate_frames():
     process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
-    
+    frame_count = 0
+    skip_frames = 5  # Number of frames to skip
+
     try:
         while True:
             chunk = process.stdout.read(1024)
@@ -69,7 +71,12 @@ def generate_frames():
             if end != -1:
                 frame = buffer[:end+2]
                 buffer = buffer[end+2:]
-                
+
+                # Increment frame counter and process only every nth frame
+                frame_count += 1
+                if frame_count % skip_frames != 0:
+                    continue
+
                 # Convert frame to numpy array for processing
                 image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
 
@@ -84,6 +91,7 @@ def generate_frames():
             if len(buffer) > 1_000_000:  # Reset if buffer gets too large
                 print("Buffer size exceeded limit, resetting buffer.")
                 buffer = b''
+
     except Exception as e:
         print(f"Error while generating frames: {e}")
     finally:
