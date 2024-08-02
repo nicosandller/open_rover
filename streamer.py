@@ -16,7 +16,7 @@ channels = 3  # number of channels for an RGB image
 # frame globals
 frame_count = 0
 frames_to_skip = 10  # Number of frames to skip classification
-fps = 15
+fps = '15'
 # queues 
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
