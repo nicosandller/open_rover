@@ -16,13 +16,10 @@ channels = 3  # number of channels for an RGB image
 # frame globals
 frame_count = 0
 frames_to_skip = 10  # Number of frames to skip classification
+fps = 15
 # queues 
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
-
-# Ensure that the image dimensions are integers
-# height = int(height)
-# width = int(width)
 
 # Correctly defining the image shape
 image_shape = (height, width, channels)
@@ -57,19 +54,14 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             with lock:
                 image = shared_array.copy()
 
-            # cv2.imwrite('debug_image_from_shared_array.jpg', image)
             # Log the shape and type of the image to ensure correctness
             print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
             # Convert image to RGB
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            # cv2.imwrite('debug_frame_rgb.jpg', cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
 
             # Extract features from the image using the runner's built-in method
             features, cropped = runner.get_features_from_image(frame_rgb)
-
-            # for debugging
-            # cv2.imwrite('debug_cropped.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
             # Run inference and catch any issues during classification
             try:
@@ -82,6 +74,8 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
 
                     # Save the cropped image for inspection
                     cv2.imwrite('debug_cropped.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
+                    # Send the boxes out back to main process
+                    output_queue.put((frame_number, bounding_boxes))
 
             except Exception as classify_error:
                 print(f"Classification error on frame {frame_number}: {classify_error}")
@@ -105,12 +99,29 @@ classification_process = multiprocessing.Process(
     )
 classification_process.start()
 
+def draw_bounding_boxes(image, bounding_boxes):
+    """Draw bounding boxes on the image."""
+    for bb in bounding_boxes:
+        # Extract bounding box details
+        x, y, w, h = bb['x'], bb['y'], bb['width'], bb['height']
+        label = bb['label']
+        confidence = bb['value']
+        
+        # Draw the rectangle (in red)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        
+        # Put the label and confidence score above the bounding box
+        label_text = f"{label} ({confidence:.2f})"
+        cv2.putText(image, label_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    
+    return image
+
 def generate_frames():
-    global shared_array, frame_count, frames_to_skip
+    global shared_array, frame_count, frames_to_skip, fps
 
     process = subprocess.Popen(
-                ['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height)],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height), '--framerate', fps],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     buffer = b''
 
@@ -151,23 +162,31 @@ def generate_frames():
                 if frame_count % frames_to_skip == 0:
                     if not input_queue.full():
                         input_queue.put(frame_count)
+                        
+                # Check for classification results and draw bounding boxes
+                try:
+                    while not output_queue.empty():
+                        latest_result = output_queue.get_nowait()
+                    if latest_result:
+                        result_frame_number, bounding_boxes = latest_result
+                        # if result_frame_number == frame_count:
+                        image = draw_bounding_boxes(image, bounding_boxes)
+                except queue.Empty:
+                    pass
+
+                # Encode the modified image back to JPEG format
+                _, jpeg_frame = cv2.imencode('.jpg', image)
+                modified_frame = jpeg_frame.tobytes()
 
                 # Always yield the frame to render it
                 yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                       b'Content-Type: image/jpeg\r\n\r\n' + modified_frame + b'\r\n')
 
                 frame_count += 1
 
             if len(buffer) > 1_000_000:  # Reset if buffer gets too large
                 print("Buffer size exceeded limit, resetting buffer.")
                 buffer = b''
-
-            # Output queue
-            # try:
-            #     while not output_queue.empty():
-            #         frame_number, result = output_queue.get_nowait()
-            # except queue.Empty:
-            #     pass
 
     except Exception as e:
         print(f"Error while generating frames: {e}")
