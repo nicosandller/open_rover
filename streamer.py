@@ -2,7 +2,7 @@ from flask import Flask, Response
 import subprocess
 import cv2
 import numpy as np
-from edge_impulse_linux.runner import ImpulseRunner
+from edge_impulse_linux.image import ImageImpulseRunner
 import sys
 import multiprocessing
 
@@ -19,7 +19,7 @@ if len(sys.argv) < 2:
 MODEL_PATH = sys.argv[1]
 
 def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
-    runner = ImpulseRunner(model_path)
+    runner = ImageImpulseRunner(model_path)
     runner.init()
     array_size = int(np.prod(array_shape))
     shared_array = np.frombuffer(multiprocessing.Array('B', array_size).get_obj(), dtype=dtype).reshape(array_shape)
