@@ -22,8 +22,9 @@ MODEL_PATH = sys.argv[1]
 def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
     runner = ImageImpulseRunner(model_path)
     runner.init()
-    array_size = int(np.prod(array_shape))
-    shared_array = np.frombuffer(multiprocessing.Array('B', array_size).get_obj(), dtype=dtype).reshape(array_shape)
+
+    # Attach to the shared array
+    shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=dtype).reshape(array_shape)
     
     while True:
         try:
