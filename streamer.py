@@ -13,9 +13,10 @@ app = Flask(__name__)
 width = 960
 height = 540
 channels = 3  # number of channels for an RGB image
+# frame globals
 frame_count = 0
-skip_classification = 10  # Number of frames to skip classification
-
+frames_to_skip = 10  # Number of frames to skip classification
+# queues 
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
 
@@ -105,7 +106,8 @@ classification_process = multiprocessing.Process(
 classification_process.start()
 
 def generate_frames():
-    global shared_array
+    global shared_array, frame_count, frames_to_skip
+
     process = subprocess.Popen(
                 ['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height)],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -146,7 +148,7 @@ def generate_frames():
                     shared_array[:] = image[:]
 
                 # Enqueue frame number for classification in a separate process
-                if frame_count % skip_classification == 0:
+                if frame_count % frames_to_skip == 0:
                     if not input_queue.full():
                         input_queue.put(frame_count)
 
