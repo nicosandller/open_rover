@@ -47,13 +47,6 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
             try:
                 result = runner.classify(features)
                 output_queue.put((frame_number, result))
-                if "bounding_boxes" in result["result"].keys():
-                    print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
-                    for bb in result["result"]["bounding_boxes"]:
-                        print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
-                    
-                    # Save the cropped image for inspection
-                    cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
             except Exception as classify_error:
                 print(f"Classification error on frame {frame_number}: {classify_error}")
@@ -141,8 +134,14 @@ def generate_frames():
             try:
                 while not output_queue.empty():
                     frame_number, result = output_queue.get_nowait()
-                    if result and result['result']['classification']:
-                        print(f"Detection in frame {frame_number}: {result['result']['classification']}")
+                    if "bounding_boxes" in result["result"].keys():
+                        print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
+                        for bb in result["result"]["bounding_boxes"]:
+                            print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
+                        
+                        # Save the cropped image for inspection
+                        cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
+
             except queue.Empty:
                 pass
 
