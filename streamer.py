@@ -46,15 +46,22 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
             # Run inference and catch any issues during classification
             try:
                 result = runner.classify(features)
-                output_queue.put((frame_number, result))
+                # output_queue.put((frame_number, result))
+                if "bounding_boxes" in result["result"].keys():
+                    print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
+                    for bb in result["result"]["bounding_boxes"]:
+                        print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
+                    
+                    # Save the cropped image for inspection
+                    cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
             except Exception as classify_error:
                 print(f"Classification error on frame {frame_number}: {classify_error}")
-                output_queue.put((frame_number, None))
+                # output_queue.put((frame_number, None))
 
         except Exception as e:
             print(f"Error during classification setup: {e}")
-            output_queue.put((frame_number, None))
+            # output_queue.put((frame_number, None))
 
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
@@ -130,20 +137,12 @@ def generate_frames():
                 print("Buffer size exceeded limit, resetting buffer.")
                 buffer = b''
 
-            # Check for classification results
-            try:
-                while not output_queue.empty():
-                    frame_number, result = output_queue.get_nowait()
-                    if "bounding_boxes" in result["result"].keys():
-                        print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
-                        for bb in result["result"]["bounding_boxes"]:
-                            print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
-                        
-                        # Save the cropped image for inspection
-                        cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
-
-            except queue.Empty:
-                pass
+            # Output queue
+            # try:
+            #     while not output_queue.empty():
+            #         frame_number, result = output_queue.get_nowait()
+            # except queue.Empty:
+            #     pass
 
     except Exception as e:
         print(f"Error while generating frames: {e}")
