@@ -37,7 +37,7 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
             print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
             # Convert image to RGB
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             # Extract features from the image using the runner's built-in method
             features, cropped = runner.get_features_from_image(frame_rgb)
