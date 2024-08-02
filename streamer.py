@@ -12,7 +12,7 @@ height = '540'
 
 # Get the model path from the command-line argument
 if len(sys.argv) < 2:
-    print("Usage: python app.py <MODEL_PATH>")
+    print("Usage: python streamer.py <MODEL_PATH>")
     sys.exit(1)
 
 MODEL_PATH = sys.argv[1]
@@ -21,18 +21,31 @@ MODEL_PATH = sys.argv[1]
 runner = ImpulseRunner(MODEL_PATH)
 runner.init()
 
+# Error flag to ensure we print the error only once
+error_logged = False
+
 def classify_frame(frame):
     """
     Run inference on a frame using the Edge Impulse model.
     """
+    global error_logged
     # Prepare frame for Edge Impulse model
     resized = cv2.resize(frame, (320, 320))  # Example: resize to model input size
     rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
     features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
 
-    # Run model inference
-    result = runner.classify(features.tolist())  # Convert ndarray to list
-    return result
+    # Convert the ndarray to a list of lists
+    features_list = features.tolist()
+
+    try:
+        # Run model inference
+        result = runner.classify(features_list)
+        return result
+    except Exception as e:
+        if not error_logged:
+            print(f"Error during classification: {e}")
+            error_logged = True
+        return None
 
 def generate_frames():
     process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
@@ -58,26 +71,10 @@ def generate_frames():
 
                 # Run inference
                 detection_result = classify_frame(image)
-                if detection_result['result']['classification']:
+                if detection_result and detection_result['result']['classification']:
                     print(f"Detection: {detection_result['result']['classification']}")
 
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-            if len(buffer) > 1_000_000:  # Reset if buffer gets too large
-                print("Buffer size exceeded limit, resetting buffer.")
-                buffer = b''
-    except Exception as e:
-        print(f"Error while generating frames: {e}")
-    finally:
-        process.stdout.close()
-        process.stderr.close()
-        process.terminate()
-        print("Subprocess terminated.")
-
-@app.route('/')
-def index():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+           ​⬤

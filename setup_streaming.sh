@@ -29,7 +29,3 @@ pip install Flask edge_impulse_linux tflite-runtime opencv-python pyaudio six
 
 # Print completion message
 echo "Setup complete!!"
-echo "Running streamer..."
-
-# python streamer.py
-python streamer.py /home/nico/camera_streamer/model.eim
