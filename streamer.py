@@ -29,15 +29,19 @@ def classify_frame(frame):
     Run inference on a frame using the Edge Impulse model.
     """
     global error_logged
-    # Prepare frame for Edge Impulse model
-    resized = cv2.resize(frame, (320, 320))  # Example: resize to model input size
-    rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-    features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
-
-    # Convert the ndarray to a list of lists
-    features_list = features.tolist()
-
     try:
+        # Prepare frame for Edge Impulse model
+        resized = cv2.resize(frame, (320, 320))  # Adjust size according to model requirements
+        rgb_frame = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+        features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
+
+        # Check for NaN or infinite values
+        if np.isnan(features).any() or np.isinf(features).any():
+            raise ValueError("Input features contain NaN or infinite values.")
+
+        # Convert the ndarray to a list of lists
+        features_list = features.tolist()
+
         # Run model inference
         result = runner.classify(features_list)
         return result
