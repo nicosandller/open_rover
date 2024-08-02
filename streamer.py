@@ -118,6 +118,7 @@ def draw_bounding_boxes(image, bounding_boxes):
 
 def generate_frames():
     global shared_array, frame_count, frames_to_skip, fps
+    latest_result = False
 
     process = subprocess.Popen(
         ['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height), '--framerate', fps],
