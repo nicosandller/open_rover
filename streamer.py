@@ -22,7 +22,7 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
     runner = ImpulseRunner(model_path)
     runner.init()
     array_size = int(np.prod(array_shape))
-    shared_array = np.frombuffer(multiprocessing.Array(dtype, array_size).get_obj(), dtype=dtype).reshape(array_shape)
+    shared_array = np.frombuffer(multiprocessing.Array('B', array_size).get_obj(), dtype=dtype).reshape(array_shape)
     while True:
         try:
             frame_number = input_queue.get()
@@ -51,7 +51,7 @@ output_queue = multiprocessing.Queue(maxsize=10)
 # Create shared array
 image_shape = (height, width, 3)
 image_dtype = np.uint8
-shared_array_base = multiprocessing.Array(image_dtype, np.prod(image_shape))
+shared_array_base = multiprocessing.Array('B', int(np.prod(image_shape)))
 shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).reshape(image_shape)
 
 # Start classification process
