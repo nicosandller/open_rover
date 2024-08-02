@@ -56,7 +56,7 @@ def generate_frames():
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
     frame_count = 0
-    skip_frames = 5  # Number of frames to skip
+    skip_frames = 50  # Number of frames to skip
 
     try:
         while True:
