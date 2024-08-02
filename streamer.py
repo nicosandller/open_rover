@@ -1,16 +1,36 @@
+import sys
+import cv2
 import queue
 import subprocess
-import cv2
 import numpy as np
+import multiprocessing
 from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
-import multiprocessing
-import sys
 
 app = Flask(__name__)
 
+#TODO: these should be in a config maybe
 width = 960
 height = 540
+channels = 3  # number of channels for an RGB image
+frame_count = 0
+skip_classification = 10  # Number of frames to skip classification
+
+input_queue = multiprocessing.Queue(maxsize=10)
+output_queue = multiprocessing.Queue(maxsize=10)
+
+# Ensure that the image dimensions are integers
+# height = int(height)
+# width = int(width)
+
+# Correctly defining the image shape
+image_shape = (height, width, channels)
+image_dtype = np.uint8
+
+# Create shared array with a lock for parallel priocessing
+lock = multiprocessing.Lock()
+shared_array_base = multiprocessing.Array('B', int(np.prod(image_shape)), lock=lock)
+shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).reshape(image_shape)
 
 # Get the model path from the command-line argument
 if len(sys.argv) < 2:
@@ -19,7 +39,7 @@ if len(sys.argv) < 2:
 
 MODEL_PATH = sys.argv[1]
 
-def classify_worker(input_queue, output_queue, shared_array_base, array_shape, dtype, lock):
+def classification_worker(input_queue, output_queue, shared_array_base, array_shape, dtype, lock):
     runner = ImageImpulseRunner(MODEL_PATH)
     runner.init()
 
@@ -70,28 +90,18 @@ def classify_worker(input_queue, output_queue, shared_array_base, array_shape, d
             print(f"Error during classification setup: {e}")
             # output_queue.put((frame_number, None))
 
-input_queue = multiprocessing.Queue(maxsize=10)
-output_queue = multiprocessing.Queue(maxsize=10)
-
-# Ensure that the image dimensions are integers
-height = int(height)
-width = int(width)
-channels = 3  # Assuming 3 channels for an RGB image
-
-# Correctly defining the image shape
-image_shape = (height, width, channels)
-image_dtype = np.uint8
-
-# Create shared array with a lock
-lock = multiprocessing.Lock()
-shared_array_base = multiprocessing.Array('B', int(np.prod(image_shape)), lock=lock)
-shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).reshape(image_shape)
-
 # Start classification process
 classification_process = multiprocessing.Process(
-    target=classify_worker, 
-    args=(input_queue, output_queue, shared_array_base, image_shape, image_dtype, lock)
-)
+        target=classification_worker, 
+        args=(
+            input_queue,
+            output_queue,
+            shared_array_base,
+            image_shape,
+            image_dtype,
+            lock
+        )
+    )
 classification_process.start()
 
 def generate_frames():
@@ -101,9 +111,6 @@ def generate_frames():
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     buffer = b''
-
-    frame_count = 0
-    skip_classification = 10  # Number of frames to skip classification
 
     try:
         while True:
@@ -166,7 +173,7 @@ def generate_frames():
         process.stdout.close()
         process.stderr.close()
         process.terminate()
-        input_queue.put(None)  # Sentinel to stop the classify_worker process
+        input_queue.put(None)  # Sentinel to stop the classification_worker process
         classification_process.join()
         print("Subprocess terminated.")
 

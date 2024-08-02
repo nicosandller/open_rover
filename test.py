@@ -1,17 +1,53 @@
 import cv2
 import numpy as np
-from edge_impulse_linux.image import ImageImpulseRunner
+from edge_impulse_linux.runner import ImpulseRunner
 import sys
+import subprocess
+import os
 
 # Ensure the model path is provided
 if len(sys.argv) < 2:
-    print("Usage: python test_preprocessing.py <MODEL_PATH>")
+    print("Usage: python test_classification.py <MODEL_PATH>")
     sys.exit(1)
 
 MODEL_PATH = sys.argv[1]
 
-# Load the captured frame
-frame = cv2.imread("captured_frame.jpg")
+# Define the width and height for the capture
+width = 960
+height = 540
+
+# Use libcamera-vid to capture a single frame
+def capture_frame():
+    cmd = [
+        'libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '1000',
+        '--width', str(width), '--height', str(height)
+    ]
+
+    # Run the command and capture the output
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout_data, stderr_data = process.communicate()
+
+    # Check for errors
+    if process.returncode != 0:
+        print(f"Error: libcamera-vid failed with error code {process.returncode}")
+        print(stderr_data.decode())
+        return None
+
+    # Read the frame from the output data
+    nparr = np.frombuffer(stdout_data, np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    return frame
+
+# Capture a single frame
+frame = capture_frame()
+if frame is None:
+    print("Error: Could not read frame.")
+    sys.exit(1)
+
+# Save the captured frame for inspection
+saved_frame_path = "captured_frame.jpg"
+cv2.imwrite(saved_frame_path, frame)
+print(f"Frame saved as {saved_frame_path}")
 
 if frame is None:
     print("Error: Could not read the frame from 'captured_frame.jpg'.")
