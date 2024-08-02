@@ -55,8 +55,10 @@ def generate_frames():
     process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
+
     frame_count = 0
-    skip_frames = 100  # Number of frames to skip
+    skip_classification = 100  # Number of frames to skip classification
+    max_frame_count = 100000  # Threshold to reset the frame count
 
     try:
         while True:
@@ -72,21 +74,26 @@ def generate_frames():
                 frame = buffer[:end+2]
                 buffer = buffer[end+2:]
 
-                # Increment frame counter and process only every nth frame
+                # Increment frame counter
                 frame_count += 1
-                if frame_count % skip_frames != 0:
-                    continue
 
-                # Convert frame to numpy array for processing
-                image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
+                # Skip classification if necessary
+                if frame_count % skip_classification == 0:
+                    # Convert frame to numpy array for processing
+                    image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
 
-                # Run inference
-                detection_result = classify_frame(image)
-                if detection_result and detection_result['result']['classification']:
-                    print(f"Detection: {detection_result['result']['classification']}")
+                    # Run inference
+                    detection_result = classify_frame(image)
+                    if detection_result and detection_result['result']['classification']:
+                        print(f"Detection: {detection_result['result']['classification']}")
 
+                # Always yield the frame to render it
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+                # Reset frame count if it reaches max_frame_count to prevent overflow
+                if frame_count >= max_frame_count:
+                    frame_count = 0
 
             if len(buffer) > 1_000_000:  # Reset if buffer gets too large
                 print("Buffer size exceeded limit, resetting buffer.")
