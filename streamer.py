@@ -12,7 +12,6 @@ height = '540'
 
 # Get the model path from the command-line argument
 if len(sys.argv) < 2:
-    # /root/.ei-linux-runner/models/110266/v25/model.eim
     print("Usage: python app.py <MODEL_PATH>")
     sys.exit(1)
 
@@ -32,7 +31,7 @@ def classify_frame(frame):
     features = np.expand_dims(rgb_frame.astype(np.float32), axis=0)
 
     # Run model inference
-    result = runner.classify(features)
+    result = runner.classify(features.tolist())  # Convert ndarray to list
     return result
 
 def generate_frames():

@@ -12,6 +12,9 @@ sudo apt-get install -y libcamera-apps
 # Install ffmpeg for video handling capabilities (optional but recommended)
 sudo apt-get install -y ffmpeg
 
+# install for use in pyaudio
+sudo apt-get install portaudio19-dev python3-pyaudio
+
 #re source bash
 source ~/.bashrc
 
@@ -21,12 +24,12 @@ python3 -m venv venv
 # Activate the virtual environment
 source venv/bin/activate
 
-# Install Flask inside the virtual environment
-pip install Flask
-pip install edge_impulse_linux tflite-runtime
+# Install Flask and others inside the virtual environment
+pip install Flask edge_impulse_linux tflite-runtime opencv-python pyaudio six
 
 # Print completion message
 echo "Setup complete!!"
-echo "Running streamer."
+echo "Running streamer..."
 
-python streamer.py
+# python streamer.py
+python streamer.py /home/nico/camera_streamer/model.eim
