@@ -5,8 +5,6 @@ import numpy as np
 from edge_impulse_linux.runner import ImpulseRunner
 import sys
 import multiprocessing
-import queue
-import os
 
 app = Flask(__name__)
 
@@ -20,18 +18,18 @@ if len(sys.argv) < 2:
 
 MODEL_PATH = sys.argv[1]
 
-def classify_worker(input_queue, output_queue, model_path, shm_name, shape, dtype):
+def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
     runner = ImpulseRunner(model_path)
     runner.init()
-    shared_mem = multiprocessing.shared_memory.SharedMemory(name=shm_name)
-    shared_array = np.ndarray(shape, dtype=dtype, buffer=shared_mem.buf)
+    array_size = int(np.prod(array_shape))
+    shared_array = np.frombuffer(multiprocessing.Array(dtype, array_size).get_obj(), dtype=dtype).reshape(array_shape)
     while True:
         try:
             frame_number = input_queue.get()
             if frame_number is None:  # Sentinel value to end the process
                 break
 
-            # Read from shared memory
+            # Read from shared array
             image = shared_array.copy()
 
             # Convert image to RGB and resize for the model
@@ -46,19 +44,18 @@ def classify_worker(input_queue, output_queue, model_path, shm_name, shape, dtyp
         except Exception as e:
             print(f"Error during classification: {e}")
             output_queue.put((frame_number, None))
-    shared_mem.close()
 
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
 
-# Create shared memory block
+# Create shared array
 image_shape = (height, width, 3)
 image_dtype = np.uint8
-shm = multiprocessing.shared_memory.SharedMemory(create=True, size=np.prod(image_shape) * np.dtype(image_dtype).itemsize)
-shared_array = np.ndarray(image_shape, dtype=image_dtype, buffer=shm.buf)
+shared_array_base = multiprocessing.Array(image_dtype, np.prod(image_shape))
+shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).reshape(image_shape)
 
 # Start classification process
-classification_process = multiprocessing.Process(target=classify_worker, args=(input_queue, output_queue, MODEL_PATH, shm.name, image_shape, image_dtype))
+classification_process = multiprocessing.Process(target=classify_worker, args=(input_queue, output_queue, MODEL_PATH, image_shape, image_dtype))
 classification_process.start()
 
 def generate_frames():
@@ -120,8 +117,6 @@ def generate_frames():
         process.terminate()
         input_queue.put(None)  # Sentinel to stop the classify_worker process
         classification_process.join()
-        shm.close()
-        shm.unlink()  # Clean up shared memory
         print("Subprocess terminated.")
 
 @app.route('/')
