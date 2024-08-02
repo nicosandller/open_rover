@@ -35,21 +35,20 @@ def classify_worker(input_queue, output_queue, shared_array_base, array_shape, d
             # Read from shared array with lock
             with lock:
                 image = shared_array.copy()
-            cv2.imwrite('image_1.jpg', image)
+
+            # cv2.imwrite('debug_image_from_shared_array.jpg', image)
             # Log the shape and type of the image to ensure correctness
             print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
             # Convert image to RGB
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            cv2.imwrite('image_2.jpg', frame_rgb)
-            cv2.imwrite('image_2b.jpg', cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
+            # cv2.imwrite('debug_frame_rgb.jpg', cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
 
             # Extract features from the image using the runner's built-in method
             features, cropped = runner.get_features_from_image(frame_rgb)
 
             # for debugging
-            cv2.imwrite('image_3.jpg', cropped)
-            cv2.imwrite('image_3b.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
+            # cv2.imwrite('debug_cropped.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
             # Run inference and catch any issues during classification
             try:
@@ -61,7 +60,7 @@ def classify_worker(input_queue, output_queue, shared_array_base, array_shape, d
                         print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
 
                     # Save the cropped image for inspection
-                    cv2.imwrite('debug.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
+                    cv2.imwrite('debug_cropped.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
 
             except Exception as classify_error:
                 print(f"Classification error on frame {frame_number}: {classify_error}")
@@ -133,7 +132,7 @@ def generate_frames():
                     continue
 
                 # for debugging
-                cv2.imwrite('image_0.jpg', image)
+                # cv2.imwrite('debug_image_0.jpg', image)
 
                 # Write to shared array with lock
                 with lock:
