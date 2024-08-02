@@ -75,7 +75,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                     # Save the cropped image for inspection
                     cv2.imwrite('debug_cropped.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
                     # Send the boxes out back to main process
-                    output_queue.put((frame_number, bounding_boxes))
+                    output_queue.put((frame_number, result["result"]["bounding_boxes"]))
 
             except Exception as classify_error:
                 print(f"Classification error on frame {frame_number}: {classify_error}")
