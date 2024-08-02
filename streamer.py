@@ -8,8 +8,9 @@ import multiprocessing
 
 app = Flask(__name__)
 
-width = '960'
-height = '540'
+# Set width and height as integers
+width = 960
+height = 540
 
 # Get the model path from the command-line argument
 if len(sys.argv) < 2:
@@ -48,9 +49,16 @@ def classify_worker(input_queue, output_queue, model_path, array_shape, dtype):
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
 
-# Create shared array
-image_shape = (height, width, 3)
+# Ensure that the image dimensions are integers
+height = int(height)
+width = int(width)
+channels = 3  # Assuming 3 channels for an RGB image
+
+# Correctly defining the image shape
+image_shape = (height, width, channels)
 image_dtype = np.uint8
+
+# Create shared array
 shared_array_base = multiprocessing.Array('B', int(np.prod(image_shape)))
 shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).reshape(image_shape)
 
@@ -60,7 +68,7 @@ classification_process.start()
 
 def generate_frames():
     global shared_array
-    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', width, '--height', height],
+    process = subprocess.Popen(['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height)],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     buffer = b''
 
