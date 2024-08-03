@@ -62,7 +62,6 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             # Run inference and catch any issues during classification
             try:
                 result = runner.classify(features)
-                print(result)
                 # output_queue.put((frame_number, result))
                 if "bounding_boxes" in result["result"].keys():
                     output_queue.put((frame_number, result["result"]["bounding_boxes"]))
@@ -73,6 +72,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                     # Check if any value in the array is less than 0.7
                     if any(value < 0.5 for value in confidence_values):
                         # upload to edge impulse
+                        print(result)
                         print(upload_image_to_edge_impulse(image, api_key))
 
                     
