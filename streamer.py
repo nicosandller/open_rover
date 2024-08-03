@@ -7,16 +7,10 @@ import multiprocessing
 from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
+from config import (width, height, channels, frame_count, frames_to_skip, fps)
+
 app = Flask(__name__)
 
-#TODO: these should be in a config maybe
-width = 960
-height = 540
-channels = 3  # number of channels for an RGB image
-# frame globals
-frame_count = 0
-frames_to_skip = 10  # Number of frames to skip classification
-fps = '15'
 # queues 
 input_queue = multiprocessing.Queue(maxsize=10)
 output_queue = multiprocessing.Queue(maxsize=10)
