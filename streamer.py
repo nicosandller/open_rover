@@ -8,7 +8,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frame_count, frames_to_skip, fps)
+from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 
 app = Flask(__name__)
@@ -71,7 +71,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                     confidence_values = [bb['value'] for bb in result["result"]["bounding_boxes"]]
 
                     # Check if any value in the array is less than 0.7
-                    if any(value < 0.7 for value in confidence_values):
+                    if any(value < 0.5 for value in confidence_values):
                         # upload to edge impulse
                         print(upload_image_to_edge_impulse(image, api_key))
 
@@ -153,7 +153,7 @@ def generate_frames():
                     if latest_result:
                         result_frame_number, bounding_boxes = latest_result
                         # if result_frame_number == frame_count:
-                        image = draw_bounding_boxes(image, bounding_boxes, width, height)
+                        image = draw_bounding_boxes(image, bounding_boxes, width, height, detection_threshold)
                 except queue.Empty:
                     pass
 

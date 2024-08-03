@@ -1,6 +1,7 @@
 import cv2
-import numpy as np
 import requests
+import numpy as np
+from datetime import datetime
 
 def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, threshold=0.7, cropped_width=320, cropped_height=320):
     """Draw circles at the center of bounding boxes on the image."""
@@ -57,10 +58,14 @@ def upload_image_to_edge_impulse(image, api_key):
     
     # Endpoint for uploading data
     url = "https://ingestion.edgeimpulse.com/api/training/files"
+
+    # Generate a unique filename using the current timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"image_{timestamp}.jpg"
     
     # Prepare the files and data for the POST request
     files = {
-        'data': ('image.jpg', image_bytes, 'image/jpeg')
+        'data': (filename, image_bytes, 'image/jpeg')
     }
     headers = {
         'x-api-key': api_key,
@@ -73,6 +78,6 @@ def upload_image_to_edge_impulse(image, api_key):
 
     # Check response
     if response.status_code == 200:
-        return "Successfully uploaded image."
+        return f"Successfully uploaded {filename}."
     else:
-        return f"Failed to upload image: {response.status_code} - {response.content}"
+        return f"Failed to upload {filename}: {response.status_code} - {response.content}"
