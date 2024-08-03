@@ -8,8 +8,8 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frame_count, frames_to_skip, fps, project_id)
-from utils import upload_image_to_edge_impulse
+from config import (width, height, channels, frame_count, frames_to_skip, fps)
+from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 
 app = Flask(__name__)
 
@@ -51,7 +51,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                 image = shared_array.copy()
 
             # Log the shape and type of the image to ensure correctness
-            print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
+            # print(f"Processing frame {frame_number}: shape={image.shape}, dtype={image.dtype}")
 
             # Convert image to RGB
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -64,9 +64,9 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                 result = runner.classify(features)
                 # output_queue.put((frame_number, result))
                 if "bounding_boxes" in result["result"].keys():
-                    print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
+                    # print('Found %d bounding boxes (%d ms.)' % (len(result["result"]["bounding_boxes"]), result['timing']['dsp'] + result['timing']['classification']))
                     for bb in result["result"]["bounding_boxes"]:
-                        print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
+                        # print('\t%s (%.2f): x=%d y=%d w=%d h=%d' % (bb['label'], bb['value'], bb['x'], bb['y'], bb['width'], bb['height']))
 
                     # Save the cropped image for inspection
                     cv2.imwrite('debug_cropped.jpg', cv2.cvtColor(cropped, cv2.COLOR_RGB2BGR))
@@ -95,42 +95,8 @@ classification_process = multiprocessing.Process(
     )
 classification_process.start()
 
-def draw_bounding_boxes(image, bounding_boxes, cropped_width=320, cropped_height=320):
-    """Draw circles at the center of bounding boxes on the image."""
-    global width, height
-
-    # Calculate scaling factors
-    x_scale = width / cropped_width
-    y_scale = height / cropped_height
-
-    for bb in bounding_boxes:
-        confidence = bb['value']
-        # Only if confidence is high, plot it.
-        if confidence > 0.7:  # Keeping confidence as a float for comparison
-            # Extract bounding box details and scale them to original image size
-            x = int(bb['x'] * x_scale)
-            y = int(bb['y'] * y_scale)
-            w = int(bb['width'] * x_scale)
-            h = int(bb['height'] * y_scale)
-            label = bb['label']
-
-            # Calculate the center of the bounding box
-            center_x = x + w // 2
-            center_y = y + h // 2
-
-            # Draw a solid circle at the center of the bounding box (in red)
-            cv2.circle(image, (center_x, center_y), 10, (0, 0, 255), -1)
-            # # Draw the rectangle (in red)
-            # cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
-
-            # Put the label and confidence score above the bounding box
-            label_text = f"{label} ({confidence:.2f})"
-            cv2.putText(image, label_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-
-    return image
-
 def generate_frames():
-    global shared_array, frame_count, frames_to_skip, fps
+    global shared_array, frame_count, frames_to_skip, fps, width, height
     latest_result = False
 
     process = subprocess.Popen(
@@ -184,7 +150,7 @@ def generate_frames():
                     if latest_result:
                         result_frame_number, bounding_boxes = latest_result
                         # if result_frame_number == frame_count:
-                        image = draw_bounding_boxes(image, bounding_boxes)
+                        image = draw_bounding_boxes(image, bounding_boxes, width, height)
                 except queue.Empty:
                     pass
 
