@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import requests
 
-def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, cropped_width=320, cropped_height=320):
+def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, threshold=0.7, cropped_width=320, cropped_height=320):
     """Draw circles at the center of bounding boxes on the image."""
 
     # Calculate scaling factors
@@ -10,9 +10,8 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, croppe
     y_scale = frame_height / cropped_height
 
     for bb in bounding_boxes:
-        confidence = bb['value']
         # Only if confidence is high, plot it.
-        if confidence > 0.7:  # Keeping confidence as a float for comparison
+        if bb['value'] > threshold:  # Keeping confidence as a float for comparison
             # Extract bounding box details and scale them to original image size
             x = int(bb['x'] * x_scale)
             y = int(bb['y'] * y_scale)
@@ -73,6 +72,6 @@ def upload_image_to_edge_impulse(image, api_key):
 
     # Check response
     if response.status_code == 200:
-        print("Successfully uploaded image.")
+        return "Successfully uploaded image."
     else:
-        print(f"Failed to upload image: {response.status_code} - {response.content}")
+        return f"Failed to upload image: {response.status_code} - {response.content}"
