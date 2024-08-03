@@ -116,6 +116,7 @@ def draw_bounding_boxes(image, bounding_boxes, cropped_width=320, cropped_height
             y = int(bb['y'] * y_scale)
             w = int(bb['width'] * x_scale)
             h = int(bb['height'] * y_scale)
+            label = bb['label']
 
             # Calculate the center of the bounding box
             center_x = x + w // 2
