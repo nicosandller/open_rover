@@ -25,7 +25,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install Flask and others inside the virtual environment
-pip install Flask edge_impulse_linux tflite-runtime opencv-python pyaudio six
+pip install Flask edge_impulse_linux tflite-runtime opencv-python pyaudio six requests
 
 # Print completion message
 echo "Setup complete!!"

@@ -1,9 +1,7 @@
-import requests
 import cv2
+import requests
 import numpy as np
 from io import BytesIO
-from config import project_id
-from secrets import api_key
 
 def upload_image_to_edge_impulse(image, api_key, project_id):
     """Upload an in-memory image to Edge Impulse using the provided API key and project ID."""
