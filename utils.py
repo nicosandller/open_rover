@@ -1,20 +1,31 @@
 import cv2
-import requests
 import numpy as np
-from io import BytesIO
+import requests
 
 def upload_image_to_edge_impulse(image, api_key, project_id):
     """Upload an in-memory image to Edge Impulse using the provided API key and project ID."""
+    if not isinstance(image, np.ndarray):
+        print("Error: The input image is not a valid numpy array.")
+        return
+    
+    # Ensure the image is in uint8 format
+    if image.dtype != np.uint8:
+        image = image.astype(np.uint8)
+
     # Convert the image to JPEG format in memory
-    _, image_encoded = cv2.imencode('.jpg', image)
+    success, image_encoded = cv2.imencode('.jpg', image)
+    if not success:
+        print("Error: Failed to encode the image.")
+        return
+
     image_bytes = image_encoded.tobytes()
     
     # Endpoint for uploading data
-    url = f"https://studio.edgeimpulse.com/v1/api/{project_id}/raw-data"
+    url = f"https://ingestion.edgeimpulse.com/api/{project_id}/raw"
     
     # Prepare the files and data for the POST request
     files = {
-        'data': ('image.jpg', image_bytes, 'image/jpeg')
+        'files': ('image.jpg', image_bytes, 'image/jpeg')
     }
     data = {
         'filename': 'image.jpg'
@@ -28,10 +39,6 @@ def upload_image_to_edge_impulse(image, api_key, project_id):
 
     # Check response
     if response.status_code == 200:
-        print("Successfully uploaded image")
+        print("Successfully uploaded image.")
     else:
-        print(f"Failed to upload image: {response.content}")
-
-# Example usage:
-# This should be called within the appropriate context where the image is available in memory.
-# upload_image_to_edge_impulse(image, api_key, project_id)
+        print(f"Failed to upload image: {response.status_code} - {response.content}")

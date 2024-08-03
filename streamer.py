@@ -7,8 +7,9 @@ import multiprocessing
 from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
-from config import (width, height, channels, frame_count, frames_to_skip, fps, project_id)
 from secrets import api_key
+from config import (width, height, channels, frame_count, frames_to_skip, fps, project_id)
+from utils import upload_image_to_edge_impulse
 
 app = Flask(__name__)
 
