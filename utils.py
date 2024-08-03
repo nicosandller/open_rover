@@ -21,21 +21,20 @@ def upload_image_to_edge_impulse(image, api_key, project_id):
     image_bytes = image_encoded.tobytes()
     
     # Endpoint for uploading data
-    url = f"https://ingestion.edgeimpulse.com/api/{project_id}/raw"
+    url = "https://ingestion.edgeimpulse.com/api/training/files"
     
     # Prepare the files and data for the POST request
     files = {
-        'files': ('image.jpg', image_bytes, 'image/jpeg')
-    }
-    data = {
-        'filename': 'image.jpg'
+        'data': ('image.jpg', image_bytes, 'image/jpeg')
     }
     headers = {
-        'x-api-key': api_key
+        'x-api-key': api_key,
+        'x-no-label': '1',
+        'x-disallow-duplicates': 'true'
     }
 
     # Send POST request
-    response = requests.post(url, files=files, data=data, headers=headers)
+    response = requests.post(url, files=files, headers=headers)
 
     # Check response
     if response.status_code == 200:
