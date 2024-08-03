@@ -163,4 +163,3 @@ cython_debug/
 
 .DS_store
 secrets.py
-config.py
