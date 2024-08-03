@@ -99,21 +99,30 @@ classification_process = multiprocessing.Process(
     )
 classification_process.start()
 
-def draw_bounding_boxes(image, bounding_boxes):
+def draw_bounding_boxes(image, bounding_boxes, cropped_width=320, cropped_height=320):
     """Draw bounding boxes on the image."""
+    global width, height
+
+    # Calculate scaling factors
+    x_scale = width / cropped_width
+    y_scale = height / cropped_height
+
     for bb in bounding_boxes:
-        # Extract bounding box details
-        x, y, w, h = bb['x'], bb['y'], bb['width'], bb['height']
+        # Extract bounding box details and scale them to original image size
+        x = int(bb['x'] * x_scale)
+        y = int(bb['y'] * y_scale)
+        w = int(bb['width'] * x_scale)
+        h = int(bb['height'] * y_scale)
         label = bb['label']
         confidence = bb['value']
-        
+
         # Draw the rectangle (in red)
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        
+
         # Put the label and confidence score above the bounding box
         label_text = f"{label} ({confidence:.2f})"
         cv2.putText(image, label_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-    
+
     return image
 
 def generate_frames():
