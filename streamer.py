@@ -8,7 +8,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold)
+from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold, upload_threshold)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 
 app = Flask(__name__)
@@ -34,6 +34,8 @@ if len(sys.argv) < 2:
 MODEL_PATH = sys.argv[1]
 
 def classification_worker(input_queue, output_queue, shared_array_base, array_shape, dtype, lock):
+    global upload_threshold
+
     runner = ImageImpulseRunner(MODEL_PATH)
     runner.init()
 
@@ -70,7 +72,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                     confidence_values = [bb['value'] for bb in result["result"]["bounding_boxes"]]
 
                     # Check if any value in the array is less than 0.7
-                    if any(value < 0.5 for value in confidence_values):
+                    if any(value < upload_threshold for value in confidence_values):
                         # upload to edge impulse
                         print(result)
                         print(upload_image_to_edge_impulse(image, api_key))
