@@ -11,7 +11,8 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, thresh
 
     for bb in bounding_boxes:
         # Only if confidence is high, plot it.
-        if bb['value'] > threshold:  # Keeping confidence as a float for comparison
+        confidence = bb['value']
+        if confidence > threshold:  # Keeping confidence as a float for comparison
             # Extract bounding box details and scale them to original image size
             x = int(bb['x'] * x_scale)
             y = int(bb['y'] * y_scale)
