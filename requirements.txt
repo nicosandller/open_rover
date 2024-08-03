@@ -1,0 +1,6 @@
+Flask
+edge_impulse_linux
+opencv-python
+pyaudio
+six
+requests
