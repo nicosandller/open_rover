@@ -70,7 +70,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                              
                     # Create an array of all predicted prob 'value'
                     confidence_values = [bb['value'] for bb in result["result"]["bounding_boxes"]]
-                    if not confidence_values:
+                    if confidence_values:
                         print(result)
 
                     # Check if any value in the array is less than 0.7
