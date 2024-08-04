@@ -37,7 +37,7 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, thresh
 
     return image
 
-def upload_image_to_edge_impulse(image, api_key, bounding_boxes):
+def upload_image_to_edge_impulse(image, api_key, detection):
     """
         Upload an in-memory image to Edge Impulse using the provided API key and project ID.
     """
@@ -66,16 +66,16 @@ def upload_image_to_edge_impulse(image, api_key, bounding_boxes):
 
     # Metadata containing bounding box information
     metadata = {
-        "boundingBoxes": bounding_boxes
+        "result": detection
     }
-    # Prepare the files and data for the POST request
+
     files = {
         'data': (filename, image_bytes, 'image/jpeg'),
-        'metadata': ('', json.dumps(metadata), 'application/json')
     }
     headers = {
         'x-label': 'cat_face',
         'x-api-key': api_key,
+        'x-metadata': json.dumps(metadata),  # Sending metadata as a header
         'x-disallow-duplicates': 'true'
     }
 
