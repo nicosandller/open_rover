@@ -1,6 +1,7 @@
 import sys
 import cv2
 import queue
+import platform
 import subprocess
 import numpy as np
 import multiprocessing
@@ -86,20 +87,6 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
         except Exception as e:
             print(f"Error during classification setup: {e}")
             # output_queue.put((frame_number, None))
-
-# Start classification process
-classification_process = multiprocessing.Process(
-        target=classification_worker, 
-        args=(
-            input_queue,
-            output_queue,
-            shared_array_base,
-            image_shape,
-            image_dtype,
-            lock
-        )
-    )
-classification_process.start()
 
 def generate_frames():
     global shared_array, frame_count, frames_to_skip, fps, width, height
@@ -189,4 +176,28 @@ def index():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    # Start classification process
+    classification_process = multiprocessing.Process(
+            target=classification_worker, 
+            args=(
+                input_queue,
+                output_queue,
+                shared_array_base,
+                image_shape,
+                image_dtype,
+                lock
+            )
+        )
+    classification_process.start()
+    # Check platform
+    system = platform.system()
+    if system == "Linux":
+        app_port = 5000
+    elif system == "Darwin":
+        app_port = 5001 
+    else:
+        print(f"Unsupported system: {system}")
+        exit(1)
+
+    # Start running the application
+    app.run(host='0.0.0.0', port=app_port)
