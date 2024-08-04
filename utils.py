@@ -64,10 +64,10 @@ def upload_image_to_edge_impulse(image, api_key, detection):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"image_{timestamp}.jpg"
 
-    # Metadata containing bounding box information
-    metadata = {
-        "result": detection
-    }
+    # # Metadata containing bounding box information
+    # metadata = {
+    #     "result": detection
+    # }
 
     files = {
         'data': (filename, image_bytes, 'image/jpeg'),
@@ -75,7 +75,7 @@ def upload_image_to_edge_impulse(image, api_key, detection):
     headers = {
         'x-label': 'cat_face',
         'x-api-key': api_key,
-        'x-metadata': json.dumps(metadata),  # Sending metadata as a header
+        # 'x-metadata': json.dumps(metadata),  # Sending metadata as a header
         'x-disallow-duplicates': 'true'
     }
 
