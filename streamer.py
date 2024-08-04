@@ -76,7 +76,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                     # Upload if there's a low confidence prediction
                     if any(value <= upload_threshold for value in confidence_values):
                         # upload to edge impulse
-                        print(upload_image_to_edge_impulse(image, api_key, result["result"]["bounding_boxes"]))
+                        print(upload_image_to_edge_impulse(cropped, api_key, result["result"]["bounding_boxes"]))
 
                     
             except Exception as classify_error:
