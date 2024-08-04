@@ -37,7 +37,7 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, thresh
 
     return image
 
-def upload_image_to_edge_impulse(image, api_key, detection):
+def upload_image_to_edge_impulse(image, api_key, bounding_boxes):
     """
         Upload an in-memory image to Edge Impulse using the provided API key and project ID.
     """
@@ -64,23 +64,32 @@ def upload_image_to_edge_impulse(image, api_key, detection):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"image_{timestamp}.jpg"
 
-    # # Metadata containing bounding box information
-    # metadata = {
-    #     "result": detection
-    # }
+    # Prepare the bounding box metadata
+    bbox_meta = json.dumps({
+            "version": 1,
+            "type": "bounding-box-labels",
+            "boundingBoxes": {
+                filename: bounding_boxes
+            }
+        },
+        separators=(',', ':')
+    )
 
-    files = {
-        'data': (filename, image_bytes, 'image/jpeg'),
-    }
+    # Prepare the payload
+    payload = (
+        ('data', (filename, image_bytes, 'image/jpeg')),
+        ('data', ('bounding_boxes.labels', bbox_meta, 'application/json'))
+    )
+
     headers = {
-        'x-label': 'cat_face',
         'x-api-key': api_key,
-        # 'x-metadata': json.dumps(metadata),  # Sending metadata as a header
+        'x-label': 'cat_face',
+        'x-add-date-id': '1',
         'x-disallow-duplicates': 'true'
     }
 
-    # Send POST request
-    response = requests.post(url, files=files, headers=headers)
+    # POST request
+    response = requests.post(url, headers=headers, files=payload)
 
     # Check response
     if response.status_code == 200:
