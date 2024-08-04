@@ -74,18 +74,19 @@ def upload_image_to_edge_impulse(image, api_key, bounding_boxes):
         },
         separators=(',', ':')
     )
+    print(bbox_meta)
 
     # Prepare the payload
     payload = (
         ('data', (filename, image_bytes, 'image/jpeg')),
-        ('data', ('bounding_boxes.labels', bbox_meta, 'application/json'))
+        ('data', ('bounding_boxes.labels', bbox_meta))
     )
 
     headers = {
         'x-api-key': api_key,
         'x-label': 'cat_face',
-        'x-add-date-id': '1',
-        'x-disallow-duplicates': 'true'
+        'x-add-date-id': '1'#,
+        # 'x-disallow-duplicates': 'true'
     }
 
     # POST request
