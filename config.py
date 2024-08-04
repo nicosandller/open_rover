@@ -12,5 +12,5 @@ fps = '15'              # number of frames per seconds to get from camera sensor
 project_id = "italian_parsley"
 
 # detection
-detection_threshold = 0.5
-upload_threshold = 0.7
+detection_threshold = 0.0
+upload_threshold = 1.0

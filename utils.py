@@ -1,4 +1,5 @@
 import cv2
+import json
 import requests
 import numpy as np
 from datetime import datetime
@@ -13,7 +14,7 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, thresh
     for bb in bounding_boxes:
         # Only if confidence is high, plot it.
         confidence = bb['value']
-        if confidence > threshold:  # Keeping confidence as a float for comparison
+        if confidence >= threshold:  # Keeping confidence as a float for comparison
             # Extract bounding box details and scale them to original image size
             x = int(bb['x'] * x_scale)
             y = int(bb['y'] * y_scale)
@@ -36,7 +37,7 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, thresh
 
     return image
 
-def upload_image_to_edge_impulse(image, api_key):
+def upload_image_to_edge_impulse(image, api_key, bounding_boxes):
     """
         Upload an in-memory image to Edge Impulse using the provided API key and project ID.
     """
@@ -62,14 +63,19 @@ def upload_image_to_edge_impulse(image, api_key):
     # Generate a unique filename using the current timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"image_{timestamp}.jpg"
-    
+
+    # Metadata containing bounding box information
+    metadata = {
+        "boundingBoxes": bounding_boxes
+    }
     # Prepare the files and data for the POST request
     files = {
-        'data': (filename, image_bytes, 'image/jpeg')
+        'data': (filename, image_bytes, 'image/jpeg'),
+        'metadata': ('', json.dumps(metadata), 'application/json')
     }
     headers = {
+        'x-label': 'cat_face',
         'x-api-key': api_key,
-        'x-no-label': '1',
         'x-disallow-duplicates': 'true'
     }
 
