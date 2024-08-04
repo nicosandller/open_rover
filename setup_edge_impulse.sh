@@ -33,3 +33,6 @@ sudo npm install edge-impulse-linux -g --unsafe-perm
 # change permisions on file
 sudo chmod +x /usr/local/bin/edge-impulse-linux
 sudo chmod +x /usr/local/bin/edge-impulse-linux-runner
+
+# Run edge impulse
+edge-impulse-linux
