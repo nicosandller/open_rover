@@ -14,3 +14,6 @@ project_id = "italian_parsley"
 # detection
 detection_threshold = 0.0
 upload_threshold = 1.0
+
+# debug
+debug = True

@@ -9,7 +9,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold, upload_threshold)
+from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold, upload_threshold, debug)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 
 app = Flask(__name__)
@@ -62,6 +62,8 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             # Run inference and catch any issues during classification
             try:
                 result = runner.classify(features)
+                if debug:
+                    print(result)
                 if "bounding_boxes" in result["result"].keys():
                     output_queue.put((frame_number, result["result"]["bounding_boxes"]))
                              
