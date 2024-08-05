@@ -164,6 +164,7 @@ def generate_frames():
                 pass
             except Exception as e:
                 print("Error whilst getting output queue: ", e)
+                print("latest result: ", latest_result)
 
 
             # Encode the modified image back to JPEG format
