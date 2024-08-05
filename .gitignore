@@ -164,3 +164,4 @@ cython_debug/
 .DS_store
 secrets.py
 *.eim
+*.jpg
