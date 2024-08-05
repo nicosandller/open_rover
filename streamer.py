@@ -123,7 +123,7 @@ def yield_frames():
                     latest_result = output_queue.get_nowait()
                 if latest_result:
                     result_frame_number, bounding_boxes = latest_result
-                    decoded_image = draw_bounding_boxes(decoded_image, bounding_boxes, width, height, detection_threshold)
+                    decoded_image = cam.draw_bounding_boxes(decoded_image, bounding_boxes, width, height)
             except queue.Empty:
                 pass
             except Exception as e:
