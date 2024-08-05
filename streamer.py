@@ -159,7 +159,7 @@ def generate_frames():
                     latest_result = output_queue.get_nowait()
                 if latest_result:
                     result_frame_number, bounding_boxes = latest_result
-                    decoded_image_with_bb = draw_bounding_boxes(decoded_image, bounding_boxes, width, height, detection_threshold)
+                    decoded_image = draw_bounding_boxes(decoded_image, bounding_boxes, width, height, detection_threshold)
             except queue.Empty:
                 pass
             except Exception as e:
@@ -168,7 +168,7 @@ def generate_frames():
                 break
 
             # Encode the modified image back to JPEG format
-            _, jpeg_frame = cv2.imencode('.jpg', decoded_image_with_bb)
+            _, jpeg_frame = cv2.imencode('.jpg', decoded_image)
             modified_jpeg_frame = jpeg_frame.tobytes()
 
             yield (b'--frame\r\n'
