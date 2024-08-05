@@ -95,7 +95,7 @@ def generate_frames():
     buffer = b''
     cap = None
     process = None
-    image = None
+    image = None  # Initialize the image variable
 
     if system == "Linux":
         # Use libcamera-vid on Linux
@@ -126,17 +126,17 @@ def generate_frames():
                         image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
                     except Exception as decode_error:
                         print(f"Error decoding frame {frame_count}: {decode_error}")
-                        continue
+                        image = None
 
             elif system == "Darwin":
                 # Read frame data from OpenCV capture
                 ret, image = cap.read()
                 if not ret:
                     print("Failed to capture image from camera.")
-                    break
-
-                # Resize frame to match expected width and height
-                image = cv2.resize(image, (width, height))
+                    image = None
+                else:
+                    # Resize frame to match expected width and height
+                    image = cv2.resize(image, (width, height))
 
             if image is None:
                 print(f"Failed to retrieve frame {frame_count}")
@@ -157,10 +157,15 @@ def generate_frames():
                 if latest_result:
                     if isinstance(latest_result, tuple) and len(latest_result) == 2:
                         result_frame_number, bounding_boxes = latest_result
-                        image = draw_bounding_boxes(image, bounding_boxes, width, height, detection_threshold)
+                        if isinstance(bounding_boxes, list):
+                            image = draw_bounding_boxes(image, bounding_boxes, width, height, detection_threshold)
+                        else:
+                            print(f"Unexpected data type for bounding_boxes: {type(bounding_boxes)}")
                     elif isinstance(latest_result, tuple) and len(latest_result) == 3:
                         frame_number, error_type, error_message = latest_result
                         print(f"Error in frame {frame_number}: {error_type} - {error_message}")
+                    else:
+                        print(f"Unexpected format of latest_result: {latest_result}")
             except queue.Empty:
                 pass
 
