@@ -64,7 +64,8 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             try:
                 features, cropped = runner.get_features_from_image(frame_rgb)
             except Exception as feature_error:
-                output_queue.put((frame_number, 'feature_extraction_error', str(feature_error)))
+                # output_queue.put((frame_number, 'feature_extraction_error', str(feature_error)))
+                print("Error getting features")
                 continue
 
             # Run inference and catch any issues during classification
@@ -82,10 +83,12 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                         print(upload_image_to_edge_impulse(cropped, api_key, result["result"]["bounding_boxes"]))
                     
             except Exception as classify_error:
-                output_queue.put((frame_number, 'classification_error', str(classify_error)))
+                print("Classification error: ", classify_error)
+                # output_queue.put((frame_number, 'classification_error', str(classify_error)))
 
         except Exception as e:
-            output_queue.put((None, 'general_error', str(e)))
+            print("Some unspecific error whilst classifying: ", e)
+            # output_queue.put((None, 'general_error', str(e)))
 
 def generate_frames():
     global shared_array, frame_count, frames_to_skip, fps, width, height
@@ -155,19 +158,13 @@ def generate_frames():
                 while not output_queue.empty():
                     latest_result = output_queue.get_nowait()
                 if latest_result:
-                    if isinstance(latest_result, tuple) and len(latest_result) == 2:
-                        result_frame_number, bounding_boxes = latest_result
-                        if isinstance(bounding_boxes, list):
-                            image = draw_bounding_boxes(image, bounding_boxes, width, height, detection_threshold)
-                        else:
-                            print(f"Unexpected data type for bounding_boxes: {type(bounding_boxes)}")
-                    elif isinstance(latest_result, tuple) and len(latest_result) == 3:
-                        frame_number, error_type, error_message = latest_result
-                        print(f"Error in frame {frame_number}: {error_type} - {error_message}")
-                    else:
-                        print(f"Unexpected format of latest_result: {latest_result}")
+                    result_frame_number, bounding_boxes = latest_result
+                    image = draw_bounding_boxes(image, bounding_boxes, width, height, detection_threshold)
             except queue.Empty:
                 pass
+            except Exception as e:
+                print("Error whilst getting output queue: ", e)
+
 
             # Encode the modified image back to JPEG format
             _, jpeg_frame = cv2.imencode('.jpg', image)
