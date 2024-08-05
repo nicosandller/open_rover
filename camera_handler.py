@@ -35,7 +35,7 @@ class CameraHandler:
             raise Exception("Failed to open camera on macOS.")
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+        self.cap.set(cv2.CAP_PROP_FPS, int(self.fps))
 
     def get_still(self):
         if self.system == "Linux":
@@ -77,7 +77,8 @@ class CameraHandler:
 
         ret, frame = self.cap.read()
         if ret:
-            return frame
+            resized_frame = cv2.resize(frame, (self.width, self.height))
+            return resized_frame
         else:
             print("Failed to capture image from macOS camera.")
             return None
@@ -93,7 +94,7 @@ class CameraHandler:
 # Test: python camera_handler.py
 if __name__ == "__main__":
     # Initialize CameraHandler with custom resolution and frame rate
-    cam = CameraHandler(width=320, height=320, fps=30)
+    cam = CameraHandler(width=320, height=320, fps='30')
     try:
         image = cam.get_still()
         if image is not None:

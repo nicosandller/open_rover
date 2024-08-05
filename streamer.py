@@ -100,7 +100,6 @@ def yield_frames():
     # Initialize the camera handler
     cam = CameraHandler(width=width, height=height, fps=fps)  # fps can be adjusted if needed
     
-    # decoded_image = cv2.resize(decoded_image, (width, height))
     try:
         while True:
             # Get a still image using the CameraHandler class
