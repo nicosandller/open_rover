@@ -127,31 +127,30 @@ def generate_frames():
                     frame = buffer[:end+2]
                     buffer = buffer[end+2:]
                     try:
-                        image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
+                        decoded_image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
                     except Exception as decode_error:
                         print(f"Error decoding frame {frame_count}: {decode_error}")
-                        image = None
 
             elif system == "Darwin":
                 # Read frame data from OpenCV capture
-                ret, image = cap.read()
+                ret, decoded_image = cap.read()
                 if not ret:
                     print("Failed to capture image from camera.")
-                    image = None
+                    decoded_image = None
                 else:
                     # Resize frame to match expected width and height
-                    image = cv2.resize(image, (width, height))
+                    decoded_image = cv2.resize(decoded_image, (width, height))
 
-            if image is None:
-                print(f"Failed to retrieve frame {frame_count}")
+            if decoded_image is None:
+                print(f"Failed to retrieve frame...")
                 continue
-
-            # Write to shared array with lock
-            with lock:
-                shared_array[:] = image[:]
 
             if frame_count % frames_to_skip == 0:
                 if not input_queue.full():
+                    # Write decoded image to shared array with lock
+                    with lock:
+                        shared_array[:] = decoded_image[:]
+
                     input_queue.put(frame_count)
 
             # Check and handle the output queue for results
@@ -160,20 +159,20 @@ def generate_frames():
                     latest_result = output_queue.get_nowait()
                 if latest_result:
                     result_frame_number, bounding_boxes = latest_result
-                    image = draw_bounding_boxes(image, bounding_boxes, width, height, detection_threshold)
+                    decoded_image_with_bb = draw_bounding_boxes(decoded_image, bounding_boxes, width, height, detection_threshold)
             except queue.Empty:
                 pass
             except Exception as e:
                 print("Error whilst getting output queue: ", e)
                 print("latest result: ", latest_result)
-
+                break
 
             # Encode the modified image back to JPEG format
-            _, jpeg_frame = cv2.imencode('.jpg', image)
-            modified_frame = jpeg_frame.tobytes()
+            _, jpeg_frame = cv2.imencode('.jpg', decoded_image_with_bb)
+            modified_jpeg_frame = jpeg_frame.tobytes()
 
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + modified_frame + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + modified_jpeg_frame + b'\r\n')
 
             frame_count += 1
 
