@@ -99,7 +99,7 @@ def generate_frames():
     buffer = b''
     cap = None
     process = None
-    image = None  # Initialize the image variable
+    decoded_image = None  # Initialize the image variable
 
     if system == "Linux":
         # Use libcamera-vid on Linux
