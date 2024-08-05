@@ -41,7 +41,8 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
     try:
         runner.init()
     except Exception as init_error:
-        output_queue.put(('init_error', str(init_error)))
+        # output_queue.put(('init_error', str(init_error)))
+        print('classification worker error: init_error', str(init_error))
         return
 
     # Attach to the shared array
