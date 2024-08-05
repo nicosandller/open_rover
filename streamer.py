@@ -11,6 +11,7 @@ from edge_impulse_linux.image import ImageImpulseRunner
 from secrets import api_key
 from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold, upload_threshold, debug)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
+from camera_handler import CameraHandler
 
 app = Flask(__name__)
 
@@ -59,6 +60,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                 image = shared_array.copy()
 
             # Convert image to RGB
+            # TODO: test if this is needed?
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             # Extract features from the image using the runner's built-in method
@@ -81,7 +83,7 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
                     # Upload if there's a low confidence prediction
                     if any(value <= upload_threshold for value in confidence_values):
                         # Upload to Edge Impulse
-                        print(upload_image_to_edge_impulse(cropped, api_key, result["result"]["bounding_boxes"]))
+                        print(upload_image_to_edge_impulse(image, api_key, result["result"]["bounding_boxes"]))
                     
             except Exception as classify_error:
                 print("Classification error: ", classify_error)
@@ -91,55 +93,18 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             print("Some unspecific error whilst classifying: ", e)
             # output_queue.put((None, 'general_error', str(e)))
 
-def generate_frames():
+def yield_frames():
     global shared_array, frame_count, frames_to_skip, fps, width, height
     latest_result = False
 
-    system = platform.system()
-    buffer = b''
-    cap = None
-    process = None
-    decoded_image = None  # Initialize the image variable
-
-    if system == "Linux":
-        # Use libcamera-vid on Linux
-        process = subprocess.Popen(
-            ['libcamera-vid', '--codec', 'mjpeg', '--inline', '-o', '-', '-t', '0', '--width', str(width), '--height', str(height), '--framerate', fps],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-    elif system == "Darwin":
-        # Use OpenCV on macOS
-        cap = cv2.VideoCapture(0)  # 0 for default camera
-
+    # Initialize the camera handler
+    cam = CameraHandler(width=width, height=height, fps=fps)  # fps can be adjusted if needed
+    
+    # decoded_image = cv2.resize(decoded_image, (width, height))
     try:
         while True:
-            if system == "Linux":
-                # Read frame data from libcamera-vid
-                chunk = process.stdout.read(1024)
-                if not chunk:
-                    print("No more data from libcamera-vid, breaking loop.")
-                    print(process.stderr.read().decode('utf-8'))  # Print stderr output
-                    break
-                buffer += chunk
-                end = buffer.find(b'\xff\xd9')
-
-                if end != -1:
-                    frame = buffer[:end+2]
-                    buffer = buffer[end+2:]
-                    try:
-                        decoded_image = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
-                    except Exception as decode_error:
-                        print(f"Error decoding frame {frame_count}: {decode_error}")
-
-            elif system == "Darwin":
-                # Read frame data from OpenCV capture
-                ret, decoded_image = cap.read()
-                if not ret:
-                    print("Failed to capture image from camera.")
-                    decoded_image = None
-                else:
-                    # Resize frame to match expected width and height
-                    decoded_image = cv2.resize(decoded_image, (width, height))
+            # Get a still image using the CameraHandler class
+            decoded_image = cam.get_still()
 
             if decoded_image is None:
                 print(f"Failed to retrieve frame...")
@@ -167,7 +132,7 @@ def generate_frames():
                 print("latest result: ", latest_result)
                 break
 
-            # Encode the modified image back to JPEG format
+            # Re-encode the modified image back to JPEG format
             _, jpeg_frame = cv2.imencode('.jpg', decoded_image)
             modified_jpeg_frame = jpeg_frame.tobytes()
 
@@ -176,27 +141,18 @@ def generate_frames():
 
             frame_count += 1
 
-            if len(buffer) > 1_000_000:
-                print("Buffer size exceeded limit, resetting buffer.")
-                buffer = b''
-
     except Exception as e:
         print(f"Error while generating frames: {e}")
 
     finally:
-        if system == "Linux":
-            process.stdout.close()
-            process.stderr.close()
-            process.terminate()
-        elif system == "Darwin":
-            cap.release()
+        cam.shut_down()
         input_queue.put(None)  # Sentinel to stop the classification_worker process
         classification_process.join()
         print("Subprocess terminated.")
 
 @app.route('/')
 def index():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(yield_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
     # Start classification process
