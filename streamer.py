@@ -88,6 +88,8 @@ def classification_worker(in_queue, out_queue, up_queue, shared_array_base, arra
             # Run inference and catch any issues during classification
             try:
                 result = runner.classify(features)
+                if debug:
+                    print(result)
                 # if there's any detections
                 if len(result["result"]["bounding_boxes"]) > 0:
                     # Send them to draw bounding boxes
@@ -100,7 +102,8 @@ def classification_worker(in_queue, out_queue, up_queue, shared_array_base, arra
                     # Upload if there's a detection with matching confidence
                     if any(value <= upload_threshold for value in confidence_values):
                         # Upload to Edge Impulse
-                        up_queue.put(image)
+                        # up_queue.put(image)
+                        pass
                         # print(upload_image_to_edge_impulse(image, api_key))
                     
             except Exception as classify_error:
