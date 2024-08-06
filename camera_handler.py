@@ -32,9 +32,6 @@ class CameraHandler:
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
             raise Exception("Failed to open camera on macOS.")
-        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        # self.cap.set(cv2.CAP_PROP_FPS, int(self.fps))
 
     def get_still(self):
         if self.system == "Linux":
@@ -82,33 +79,42 @@ class CameraHandler:
             print("Failed to capture image from macOS camera.")
             return None
 
-    def draw_bounding_boxes(self, image, bounding_boxes, cropped_width=320, cropped_height=320):
-        """Draw circles at the center of bounding boxes on the image."""
+    def draw_bounding_boxes(self, image, bounding_boxes, model_input_width=320, model_input_height=320):
+        """
+            Draw circles at the center of bounding boxes on the image.
 
-        # Calculate scaling factors
-        x_scale = self.width / cropped_width
-        y_scale = self.height / cropped_height
+        Original image is cropped to its shortest side (usually the height). 
+        For example a 960 x 540 picture turns into a 540x540 picture, then it gets resized to 320x320
+        The model returns the detection coordinates on this last cropped and resized version.
+        This function maps the coordinates back to the original size.
+        """
+
+        min_coordinate = min(self.width, self.height)
 
         for bb in bounding_boxes:
             # Only if confidence is high, plot it (?)
             confidence = bb['value']
             # Extract bounding box details and scale them to original image size
-            x = int(bb['x'] * x_scale)
-            y = int(bb['y'] * y_scale)
+            x = float(bb['x'])
+            y = float(bb['y'])
             w = int(bb['width'])
             h = int(bb['height'])
             label = bb['label']
 
-            # Calculate the center of the bounding box
-            center_x = x + w // 2
-            center_y = y + h // 2
+            print("x: ", x)
+            x_resized = int((x * (min_coordinate / model_input_width)) + (min_coordinate - model_input_width))
+            print("x_scaled_back: ", x_resized)
+
+            print("y: ", y)
+            y_resized = int(y * (min_coordinate / model_input_height))
+            print("y_resized: ", y_resized)
 
             # Draw a solid circle at the center of the bounding box (in red)
-            cv2.circle(image, (center_x, center_y), 10, (0, 0, 255), -1)
+            cv2.circle(image, (x_resized, y_resized), 10, (0, 0, 255), -1)
 
             # Put the label and confidence score above the bounding box
             label_text = f"{label} ({confidence:.2f})"
-            cv2.putText(image, label_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+            cv2.putText(image, label_text, (x_resized, y_resized - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
 
         return image
 
@@ -123,11 +129,46 @@ class CameraHandler:
 # Test: python camera_handler.py
 if __name__ == "__main__":
     # Initialize CameraHandler with custom resolution and frame rate
-    cam = CameraHandler(width=320, height=320, fps=30)
+    cam = CameraHandler(width=960, height=540, fps=30)
     try:
+        # Test 1: capture still
+        print("Test 1: capture still")
         image = cam.get_still()
         if image is not None:
-            cv2.imwrite('camera_handler_test.jpg', image)
+            # Save the captured image
+            cv2.imwrite('test_images/camera_handler_test.jpg', image)
             print("Image captured successfully.")
+
+
+        # Test 2: annotation
+        print("Test 2: annotation")
+        # image_20240805_210136
+        data = {"sampleId":1127881946, "boundingBoxes":[{"label":1,"x":99,"y":115,"width":29,"height":29, "value": 0.75}]}
+        image_path = 'test_images/image_to_classify.jpg'
+        image = cv2.imread(image_path)
+
+        # TODO: create an integrated test
+        # from edge_impulse_linux.image import ImageImpulseRunner
+        # runner = ImageImpulseRunner("/Users/nicolassandller/repos/camera_streamer/model_mac.eim")
+        # runner.init()
+        # frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # features, cropped = runner.get_features_from_image(frame_rgb)
+        # cv2.imwrite('test_images/cropped_image_to_classify.jpg', cropped)
+        # result = runner.classify(features)
+        # print("Classification: ", result)
+
+        if image is not None:
+            # Mock bounding boxes data
+            mock_bounding_boxes =  [
+                    {'height': 8, 'label': 'cat_face', 'value': 0.6137110590934753, 'width': 8, 'x': 80, 'y': 192}
+            ]
+
+            # Draw bounding boxes on the loaded image
+            annotated_image = cam.draw_bounding_boxes(image, mock_bounding_boxes)
+
+            # Save the annotated image
+            cv2.imwrite('test_images/bb_image_to_classify.jpg', annotated_image)
+            print("Annotated image saved successfully.")
+
     finally:
         cam.shut_down()
