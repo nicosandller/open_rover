@@ -46,7 +46,6 @@ def upload_worker(up_queue):
         try:
             if upload_to_ei:
                 print(upload_image_to_edge_impulse(image_to_upload, api_key))
-                pass
         except Exception as e:
             print(f"Upload failed: {e}")
 
@@ -92,7 +91,10 @@ def classification_worker(in_queue, out_queue, up_queue, shared_array_base, arra
                 # if there's any detections
                 if len(result["result"]["bounding_boxes"]) > 0:
                     # Send them to draw bounding boxes
-                    out_queue.put((frame_number, result["result"]["bounding_boxes"]))
+                    bounding_boxes = result["result"]["bounding_boxes"]
+                    out_queue.put((frame_number, bounding_boxes))
+                    if debug:
+                        print(bounding_boxes)
                     # Create an array of all predicted prob 'value'
                     confidence_values = [bb['value'] for bb in result["result"]["bounding_boxes"]]
                     # Upload if there's a detection with matching confidence
