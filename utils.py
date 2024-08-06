@@ -37,7 +37,7 @@ def draw_bounding_boxes(image, bounding_boxes, frame_width, frame_height, thresh
 
     return image
 
-def upload_image_to_edge_impulse(image, api_key, bounding_boxes):
+def upload_image_to_edge_impulse(image, api_key):
     """
         Upload an in-memory image to Edge Impulse using the provided API key and project ID.
     """
