@@ -46,7 +46,7 @@ def upload_worker(up_queue):
         try:
             if upload_to_ei:
                 print(upload_image_to_edge_impulse(image_to_upload, api_key))
-            pass
+                pass
         except Exception as e:
             print(f"Upload failed: {e}")
 

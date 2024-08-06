@@ -13,4 +13,4 @@ upload_threshold = 1.0
 
 # debug
 debug = True
-upload_to_ei = True
+upload_to_ei = False
