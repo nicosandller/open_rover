@@ -101,13 +101,9 @@ class CameraHandler:
             h = int(bb['height'])
             label = bb['label']
 
-            print("x: ", x)
             x_resized = int((x * (min_coordinate / model_input_width)) + (min_coordinate - model_input_width))
-            print("x_scaled_back: ", x_resized)
 
-            print("y: ", y)
             y_resized = int(y * (min_coordinate / model_input_height))
-            print("y_resized: ", y_resized)
 
             # Draw a solid circle at the center of the bounding box (in red)
             cv2.circle(image, (x_resized, y_resized), 10, (0, 0, 255), -1)
