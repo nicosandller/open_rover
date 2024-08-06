@@ -9,7 +9,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frame_count, frames_to_skip, fps, detection_threshold, upload_threshold, debug)
+from config import (width, height, channels, frames_to_skip, fps, upload_threshold, debug)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 from camera_handler import CameraHandler
 
@@ -74,13 +74,13 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             # Run inference and catch any issues during classification
             try:
                 result = runner.classify(features)
-                if "bounding_boxes" in result["result"]:
+                # if there's any detections
+                if len(result["result"]["bounding_boxes"]) > 0:
+                    # Send them to draw bounding boxes
                     output_queue.put((frame_number, result["result"]["bounding_boxes"]))
-                             
                     # Create an array of all predicted prob 'value'
                     confidence_values = [bb['value'] for bb in result["result"]["bounding_boxes"]]
-
-                    # Upload if there's a low confidence prediction
+                    # Upload if there's a detection with matching confidence
                     if any(value <= upload_threshold for value in confidence_values):
                         # Upload to Edge Impulse
                         print(upload_image_to_edge_impulse(image, api_key, result["result"]["bounding_boxes"]))
@@ -94,8 +94,9 @@ def classification_worker(input_queue, output_queue, shared_array_base, array_sh
             # output_queue.put((None, 'general_error', str(e)))
 
 def yield_frames():
-    global shared_array, frame_count, frames_to_skip, fps, width, height
+    global shared_array, frames_to_skip, fps, width, height
     latest_result = False
+    frame_count = 0
 
     # Initialize the camera handler
     cam = CameraHandler(width=width, height=height, fps=fps)  # fps can be adjusted if needed
