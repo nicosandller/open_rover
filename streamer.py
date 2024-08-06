@@ -9,7 +9,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frames_to_skip, fps, upload_threshold, debug)
+from config import (width, height, channels, frames_to_skip, fps, upload_threshold, upload_to_ei, debug)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 from camera_handler import CameraHandler
 
@@ -37,12 +37,16 @@ if len(sys.argv) < 2:
 MODEL_PATH = sys.argv[1]
 
 def upload_worker(up_queue):
+    global upload_to_ei
+
     while True:
         image_to_upload = up_queue.get()
         if image_to_upload is None:  # Sentinel value to end the process
             break
         try:
-            print(upload_image_to_edge_impulse(image_to_upload, api_key))
+            if upload_to_ei:
+                print(upload_image_to_edge_impulse(image_to_upload, api_key))
+            pass
         except Exception as e:
             print(f"Upload failed: {e}")
 
