@@ -156,7 +156,7 @@ def yield_frames():
                     result_frame_number, bounding_boxes = latest_result
                     decoded_image = cam.draw_bounding_boxes(decoded_image, bounding_boxes)
                     # stop plotting the predictions after 15 frames
-                    if frame_count % 30 == 0:
+                    if frame_count % 15 == 0:
                         latest_result = None
 
             except queue.Empty:
