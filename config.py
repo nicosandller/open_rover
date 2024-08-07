@@ -4,8 +4,9 @@ height = 540
 channels = 3            # number of channels for an RGB image
 
 # Frame configuration
-frames_to_skip = 2     # Number of frames to skip classification
+frames_to_skip = 7     # Number of frames to skip classification
 fps = '30'              # number of frames per seconds to get from camera sensor
+stickiness = 20
 
 # detection
 detection_threshold = 0.0

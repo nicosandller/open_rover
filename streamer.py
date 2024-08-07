@@ -10,7 +10,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frames_to_skip, fps, upload_threshold)
+from config import (width, height, channels, frames_to_skip, fps, upload_threshold, stickiness)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 from camera_handler import CameraHandler
 
@@ -124,7 +124,7 @@ def classification_worker(in_queue, out_queue, up_queue, shared_array_base, arra
             # out_queue.put((None, 'general_error', str(e)))
 
 def yield_frames():
-    global shared_array, frames_to_skip, fps, width, height
+    global shared_array, frames_to_skip, fps, width, height, stickiness
     latest_result = False
     frame_count = 0
 
@@ -156,7 +156,7 @@ def yield_frames():
                     result_frame_number, bounding_boxes = latest_result
                     decoded_image = cam.draw_bounding_boxes(decoded_image, bounding_boxes)
                     # stop plotting the predictions after 15 frames
-                    if frame_count % 15 == 0:
+                    if frame_count % stickiness == 0:
                         latest_result = None
 
             except queue.Empty:
