@@ -1,6 +1,7 @@
 import sys
 import cv2
 import queue
+import signal
 import platform
 import subprocess
 import numpy as np
@@ -38,6 +39,15 @@ MODEL_PATH      = sys.argv[1]
 DEBUG           = int(sys.argv[2])
 UPLOAD_TO_EI    = int(sys.argv[3])
 
+# Handle termination of subprocesses with ctrl + C
+def signal_handler():
+    print("Termination signal received. Cleaning up...")
+    in_queue.put(None)  # Sentinel to stop the classification_worker process
+    classification_process.join()
+    up_queue.put(None)  # Sentinel to stop the uploader_process process
+    uploader_process.join()
+    print("Subprocesses terminated.")
+    sys.exit(0)
 
 def upload_worker(up_queue):
     global UPLOAD_TO_EI
@@ -170,17 +180,14 @@ def yield_frames():
 
     finally:
         cam.shut_down()
-        in_queue.put(None)  # Sentinel to stop the classification_worker process
-        classification_process.join()
-        up_queue.put(None)  # Sentinel to stop the uploader_process process
-        uploader_process.join()
-        print("Subprocess terminated.")
 
 @app.route('/')
 def index():
     return Response(yield_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
+    # Register the signal handler for SIGINT (Ctrl+C)
+    signal.signal(signal.SIGINT, signal_handler)
     # Start classification worker process
     classification_process = multiprocessing.Process(
             target=classification_worker, 
@@ -212,5 +219,10 @@ if __name__ == "__main__":
         print(f"Unsupported system: {system}")
         exit(1)
 
-    # Start running the application
-    app.run(host='0.0.0.0', port=app_port)
+    try:
+        # Start running the application
+        app.run(host='0.0.0.0', port=app_port)
+    except Exception as e:
+        print(f"Error occurred: {e}")
+    finally:
+        signal_handler()  # Call the signal handler to clean up

@@ -5,7 +5,7 @@ channels = 3            # number of channels for an RGB image
 
 # Frame configuration
 frames_to_skip = 2     # Number of frames to skip classification
-fps = '15'              # number of frames per seconds to get from camera sensor
+fps = '30'              # number of frames per seconds to get from camera sensor
 
 # detection
 detection_threshold = 0.0
