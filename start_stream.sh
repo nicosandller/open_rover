@@ -14,4 +14,4 @@ fi
 echo "Sourcing python virtual environment."
 source venv/bin/activate
 echo "Starting stream..."
-python streamer.py $MODEL_PATH
+python streamer.py $MODEL_PATH 1 0
