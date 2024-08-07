@@ -35,8 +35,8 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 MODEL_PATH      = sys.argv[1]
-DEBUG           = sys.argv[2]
-UPLOAD_TO_EI    = sys.argv[3]
+DEBUG           = int(sys.argv[2])
+UPLOAD_TO_EI    = int(sys.argv[3])
 
 
 def upload_worker(up_queue):
