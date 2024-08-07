@@ -9,7 +9,7 @@ from flask import Flask, Response
 from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
-from config import (width, height, channels, frames_to_skip, fps, upload_threshold, upload_to_ei, debug)
+from config import (width, height, channels, frames_to_skip, fps, upload_threshold)
 from utils import upload_image_to_edge_impulse, draw_bounding_boxes
 from camera_handler import CameraHandler
 
@@ -31,20 +31,23 @@ shared_array = np.frombuffer(shared_array_base.get_obj(), dtype=image_dtype).res
 
 # Get the model path from the command-line argument
 if len(sys.argv) < 2:
-    print("Usage: python streamer.py <MODEL_PATH>")
+    print("Usage: python streamer.py <MODEL_PATH> <0_1 for DEBUG> <0_1 for Upload to EI>")
     sys.exit(1)
 
-MODEL_PATH = sys.argv[1]
+MODEL_PATH      = sys.argv[1]
+DEBUG           = sys.argv[2]
+UPLOAD_TO_EI    = sys.argv[3]
+
 
 def upload_worker(up_queue):
-    global upload_to_ei
+    global UPLOAD_TO_EI
 
     while True:
         image_to_upload = up_queue.get()
         if image_to_upload is None:  # Sentinel value to end the process
             break
         try:
-            if upload_to_ei:
+            if UPLOAD_TO_EI:
                 print(upload_image_to_edge_impulse(image_to_upload, api_key))
         except Exception as e:
             print(f"Upload failed: {e}")
@@ -93,7 +96,7 @@ def classification_worker(in_queue, out_queue, up_queue, shared_array_base, arra
                     # Send them to draw bounding boxes
                     bounding_boxes = result["result"]["bounding_boxes"]
                     out_queue.put((frame_number, bounding_boxes))
-                    if debug:
+                    if DEBUG:
                         print(bounding_boxes)
                     # Create an array of all predicted prob 'value'
                     confidence_values = [bb['value'] for bb in result["result"]["bounding_boxes"]]

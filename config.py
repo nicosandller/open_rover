@@ -10,7 +10,3 @@ fps = '15'              # number of frames per seconds to get from camera sensor
 # detection
 detection_threshold = 0.0
 upload_threshold = 1.0
-
-# debug
-debug = False
-upload_to_ei = False
