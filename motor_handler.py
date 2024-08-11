@@ -105,9 +105,16 @@ if __name__ == "__main__":
         motor.stop()
         time.sleep(2)
         
-        print("Test 2: move forward with right left turning 3s")
+        print("Test 3: move forward with right left turning 3s")
         # Move forward with a left turn
         motor.forward(75, turn=-50)  # Turn left moderately
+        time.sleep(3)
+        motor.stop()
+        time.sleep(2)
+
+        print("Test 4: move backwards 3s")
+        # Move forward with a right turn
+        motor.backward(75)  # Turn right moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
