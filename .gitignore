@@ -167,3 +167,4 @@ secrets.py
 *.jpg
 test_images
 model_files
+other_training_data

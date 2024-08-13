@@ -53,12 +53,12 @@ def upload_worker(up_queue):
     global UPLOAD_TO_EI
 
     while True:
-        image_to_upload = up_queue.get()
+        image_to_upload, bounding_boxes = up_queue.get()
         if image_to_upload is None:  # Sentinel value to end the process
             break
         try:
             if UPLOAD_TO_EI:
-                print(upload_image_to_edge_impulse(image_to_upload, api_key))
+                print(upload_image_to_edge_impulse(image_to_upload, api_key, bounding_boxes, MODEL_PATH))
         except Exception as e:
             print(f"Upload failed: {e}")
 
@@ -113,7 +113,7 @@ def classification_worker(in_queue, out_queue, up_queue, shared_array_base, arra
                     # Upload if there's a detection with matching confidence
                     if any(value <= upload_threshold for value in confidence_values):
                         # Upload to Edge Impulse
-                        up_queue.put(image)
+                        up_queue.put((image, result["result"]["bounding_boxes"]))
                     
             except Exception as classify_error:
                 print("Classification error: ", classify_error)
