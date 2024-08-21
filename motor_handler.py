@@ -90,7 +90,7 @@ if __name__ == "__main__":
     print("starting motor tests...")
     time.sleep(3)
 
-    set_speed = 40
+    set_speed = 55
 
     try:
         print("Test 1: move forward without turning 3s")
