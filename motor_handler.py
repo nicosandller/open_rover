@@ -86,35 +86,35 @@ class MotorDriver:
 
 # Test the MotorDriver class
 if __name__ == "__main__":
-    motor = MotorDriver(in1_pin=23, in2_pin=24, ena_pin=12, in3_pin=27, in4_pin=22, enb_pin=13)
+    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
     print("starting motor tests...")
     time.sleep(3)
 
     try:
         print("Test 1: move forward without turning 3s")
         # Move forward without turning
-        motor.forward(75)
+        motor.forward(20)
         time.sleep(3)
         motor.stop()
         time.sleep(2)
         
         print("Test 2: move forward with right turn turning 3s")
         # Move forward with a right turn
-        motor.forward(75, turn=50)  # Turn right moderately
+        motor.forward(20, turn=50)  # Turn right moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
         
         print("Test 3: move forward with right left turning 3s")
         # Move forward with a left turn
-        motor.forward(75, turn=-50)  # Turn left moderately
+        motor.forward(20, turn=-50)  # Turn left moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
 
         print("Test 4: move backwards 3s")
         # Move forward with a right turn
-        motor.backward(75)  # Turn right moderately
+        motor.backward(20)  # Turn right moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
