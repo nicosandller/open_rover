@@ -90,31 +90,33 @@ if __name__ == "__main__":
     print("starting motor tests...")
     time.sleep(3)
 
+    set_speed = 40
+
     try:
         print("Test 1: move forward without turning 3s")
         # Move forward without turning
-        motor.forward(20)
+        motor.forward(set_speed)
         time.sleep(3)
         motor.stop()
         time.sleep(2)
         
         print("Test 2: move forward with right turn turning 3s")
         # Move forward with a right turn
-        motor.forward(20, turn=50)  # Turn right moderately
+        motor.forward(set_speed, turn=50)  # Turn right moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
         
         print("Test 3: move forward with right left turning 3s")
         # Move forward with a left turn
-        motor.forward(20, turn=-50)  # Turn left moderately
+        motor.forward(set_speed, turn=-50)  # Turn left moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
 
         print("Test 4: move backwards 3s")
         # Move forward with a right turn
-        motor.backward(20)  # Turn right moderately
+        motor.backward(set_speed)  # Turn right moderately
         time.sleep(3)
         motor.stop()
         time.sleep(2)
