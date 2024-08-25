@@ -3,7 +3,7 @@ import time
 
 class MotorDriver:
     """
-        DC motor driver with L298N chip.
+    DC motor driver with L298N chip.
     """
     def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin, pwm_freq=1000):
         # Motor A (Left)
@@ -34,24 +34,67 @@ class MotorDriver:
         self.pwmA.start(0)
         self.pwmB.start(0)
 
-    def forward(self, speed, turn=0):
+        # Current speed and direction tracking
+        self.current_speed_a = 0
+        self.current_speed_b = 0
+        self.current_direction = 'stopped'  # 'forward', 'backward', or 'stopped'
+
+    def ramp_speed(self, pwm_a, pwm_b, current_speed_a, current_speed_b, target_speed_a, target_speed_b, direction, ramp_time=3.0, steps=10):
         """
-        Moves forward with optional turning.
+        Gradually ramps the speed of both motors to their target speeds, considering direction changes.
         
-        :param speed: The base speed for both motors.
-        :param turn: Positive values turn right, negative values turn left.
-                     Range from -100 to 100. 0 means no turning.
+        :param pwm_a: The PWM object for motor A.
+        :param pwm_b: The PWM object for motor B.
+        :param current_speed_a: The current speed of motor A.
+        :param current_speed_b: The current speed of motor B.
+        :param target_speed_a: The target speed for motor A.
+        :param target_speed_b: The target speed for motor B.
+        :param direction: The new direction ('forward' or 'backward').
+        :param ramp_time: The total time to reach the target speed.
+        :param steps: The number of steps to increase the speed.
         """
+        if self.current_direction != direction and self.current_direction != 'stopped':
+            # First, ramp down to zero
+            steps_to_zero = steps
+            step_delay = ramp_time / steps_to_zero
+            speed_step_a = -current_speed_a / steps_to_zero
+            speed_step_b = -current_speed_b / steps_to_zero
+            
+            for _ in range(steps_to_zero):
+                current_speed_a += speed_step_a
+                current_speed_b += speed_step_b
+                pwm_a.ChangeDutyCycle(max(0, min(100, current_speed_a)))
+                pwm_b.ChangeDutyCycle(max(0, min(100, current_speed_b)))
+                time.sleep(step_delay)
+            
+            self.current_direction = 'stopped'
+            current_speed_a = 0
+            current_speed_b = 0
+
+        # Now, ramp up to the target speed in the new direction
+        steps_to_target = steps
+        step_delay = ramp_time / steps_to_target
+        speed_step_a = (target_speed_a - current_speed_a) / steps_to_target
+        speed_step_b = (target_speed_b - current_speed_b) / steps_to_target
+        
+        for _ in range(steps_to_target):
+            current_speed_a += speed_step_a
+            current_speed_b += speed_step_b
+            pwm_a.ChangeDutyCycle(max(0, min(100, current_speed_a)))
+            pwm_b.ChangeDutyCycle(max(0, min(100, current_speed_b)))
+            time.sleep(step_delay)
+        
+        self.current_direction = direction
+        return target_speed_a, target_speed_b
+
+    def forward(self, speed, turn=0):
         if turn > 0:
-            # Turning right: reduce speed on the right motor
             left_speed = speed
             right_speed = max(0, speed - (speed * turn / 100))
         elif turn < 0:
-            # Turning left: reduce speed on the left motor
             left_speed = max(0, speed + (speed * turn / 100))
             right_speed = speed
         else:
-            # No turning, both motors same speed
             left_speed = speed
             right_speed = speed
 
@@ -60,24 +103,70 @@ class MotorDriver:
         GPIO.output(self.IN3, GPIO.HIGH)
         GPIO.output(self.IN4, GPIO.LOW)
         
-        self.pwmA.ChangeDutyCycle(left_speed)
-        self.pwmB.ChangeDutyCycle(right_speed)
+        self.current_speed_a, self.current_speed_b = self.ramp_speed(
+            self.pwmA, self.pwmB,
+            self.current_speed_a, self.current_speed_b,
+            left_speed, right_speed,
+            'forward'
+        )
 
     def backward(self, speed):
         GPIO.output(self.IN1, GPIO.LOW)
         GPIO.output(self.IN2, GPIO.HIGH)
         GPIO.output(self.IN3, GPIO.LOW)
         GPIO.output(self.IN4, GPIO.HIGH)
+        
+        self.current_speed_a, self.current_speed_b = self.ramp_speed(
+            self.pwmA, self.pwmB,
+            self.current_speed_a, self.current_speed_b,
+            speed, speed,
+            'backward'
+        )
+
+    def spin(self, speed, direction='right'):
+        # Set the spin direction and speed directly without ramping up
+        if direction == 'right':
+            GPIO.output(self.IN1, GPIO.HIGH)
+            GPIO.output(self.IN2, GPIO.LOW)
+            GPIO.output(self.IN3, GPIO.LOW)
+            GPIO.output(self.IN4, GPIO.HIGH)
+        elif direction == 'left':
+            GPIO.output(self.IN1, GPIO.LOW)
+            GPIO.output(self.IN2, GPIO.HIGH)
+            GPIO.output(self.IN3, GPIO.HIGH)
+            GPIO.output(self.IN4, GPIO.LOW)
+        
         self.pwmA.ChangeDutyCycle(speed)
         self.pwmB.ChangeDutyCycle(speed)
+        self.current_direction = 'spin'
 
     def stop(self):
+        # Immediate stop
         GPIO.output(self.IN1, GPIO.LOW)
         GPIO.output(self.IN2, GPIO.LOW)
         GPIO.output(self.IN3, GPIO.LOW)
         GPIO.output(self.IN4, GPIO.LOW)
         self.pwmA.ChangeDutyCycle(0)
         self.pwmB.ChangeDutyCycle(0)
+        self.current_speed_a = 0
+        self.current_speed_b = 0
+        self.current_direction = 'stopped'
+
+    def gradual_stop(self, ramp_time=3.0, steps=10):
+        # Gradual stop by ramping down to zero
+        self.current_speed_a, self.current_speed_b = self.ramp_speed(
+            self.pwmA, self.pwmB,
+            self.current_speed_a, self.current_speed_b,
+            0, 0,
+            'stopped',
+            ramp_time=ramp_time,
+            steps=steps
+        )
+        GPIO.output(self.IN1, GPIO.LOW)
+        GPIO.output(self.IN2, GPIO.LOW)
+        GPIO.output(self.IN3, GPIO.LOW)
+        GPIO.output(self.IN4, GPIO.LOW)
+        self.current_direction = 'stopped'
 
     def cleanup(self):
         self.pwmA.stop()
@@ -94,32 +183,45 @@ if __name__ == "__main__":
 
     try:
         print("Test 1: move forward without turning 3s")
-        # Move forward without turning
         motor.forward(set_speed)
         time.sleep(3)
-        motor.stop()
+        motor.gradual_stop()
         time.sleep(2)
         
         print("Test 2: move forward with right turn turning 3s")
-        # Move forward with a right turn
-        motor.forward(set_speed, turn=50)  # Turn right moderately
+        motor.forward(set_speed, turn=50)
         time.sleep(3)
-        motor.stop()
+        motor.gradual_stop()
         time.sleep(2)
         
-        print("Test 3: move forward with right left turning 3s")
-        # Move forward with a left turn
-        motor.forward(set_speed, turn=-50)  # Turn left moderately
+        print("Test 3: move forward with left turning 3s")
+        motor.forward(set_speed, turn=-50)
+        time.sleep(3)
+        motor.gradual_stop()
+        time.sleep(2)
+
+        print("Test 4: move backwards 3s")
+        motor.backward(set_speed)
+        time.sleep(3)
+        motor.gradual_stop()
+        time.sleep(2)
+        
+        print("Test 5: spin right 3s")
+        motor.spin(set_speed, direction='right')
         time.sleep(3)
         motor.stop()
         time.sleep(2)
 
-        print("Test 4: move backwards 3s")
-        # Move forward with a right turn
-        motor.backward(set_speed)  # Turn right moderately
+        print("Test 6: spin left 3s")
+        motor.spin(set_speed, direction='left')
         time.sleep(3)
         motor.stop()
         time.sleep(2)
+
+        print("Test 7: gradual stop.")
+        motor.forward(set_speed)
+        motor.gradual_stop()
+        
         print("Finished tests!")
         
     except KeyboardInterrupt:
