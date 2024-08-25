@@ -39,7 +39,10 @@ class MotorDriver:
         self.current_speed_b = 0
         self.current_direction = 'stopped'  # 'forward', 'backward', or 'stopped'
 
-    def ramp_speed(self, pwm_a, pwm_b, current_speed_a, current_speed_b, target_speed_a, target_speed_b, direction, ramp_time=3.0, steps=10):
+        # Minimum speed threshold
+        self.MIN_SPEED = 45
+
+    def ramp_speed(self, pwm_a, pwm_b, current_speed_a, current_speed_b, target_speed_a, target_speed_b, direction, ramp_time=1.0, steps=10):
         """
         Gradually ramps the speed of both motors to their target speeds, considering direction changes.
         
@@ -63,8 +66,8 @@ class MotorDriver:
             for _ in range(steps_to_zero):
                 current_speed_a += speed_step_a
                 current_speed_b += speed_step_b
-                pwm_a.ChangeDutyCycle(max(0, min(100, current_speed_a)))
-                pwm_b.ChangeDutyCycle(max(0, min(100, current_speed_b)))
+                pwm_a.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_a)))
+                pwm_b.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_b)))
                 time.sleep(step_delay)
             
             self.current_direction = 'stopped'
@@ -80,19 +83,20 @@ class MotorDriver:
         for _ in range(steps_to_target):
             current_speed_a += speed_step_a
             current_speed_b += speed_step_b
-            pwm_a.ChangeDutyCycle(max(0, min(100, current_speed_a)))
-            pwm_b.ChangeDutyCycle(max(0, min(100, current_speed_b)))
+            pwm_a.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_a)))
+            pwm_b.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_b)))
             time.sleep(step_delay)
         
         self.current_direction = direction
         return target_speed_a, target_speed_b
 
     def forward(self, speed, turn=0):
+        speed = max(self.MIN_SPEED, speed)
         if turn > 0:
             left_speed = speed
-            right_speed = max(0, speed - (speed * turn / 100))
+            right_speed = max(self.MIN_SPEED, speed * (1 - turn / 100))
         elif turn < 0:
-            left_speed = max(0, speed + (speed * turn / 100))
+            left_speed = max(self.MIN_SPEED, speed * (1 + turn / 100))
             right_speed = speed
         else:
             left_speed = speed
@@ -111,6 +115,7 @@ class MotorDriver:
         )
 
     def backward(self, speed):
+        speed = max(self.MIN_SPEED, speed)
         GPIO.output(self.IN1, GPIO.LOW)
         GPIO.output(self.IN2, GPIO.HIGH)
         GPIO.output(self.IN3, GPIO.LOW)
@@ -124,6 +129,7 @@ class MotorDriver:
         )
 
     def spin(self, speed, direction='right'):
+        speed = max(self.MIN_SPEED, speed)
         # Set the spin direction and speed directly without ramping up
         if direction == 'right':
             GPIO.output(self.IN1, GPIO.HIGH)
@@ -152,7 +158,7 @@ class MotorDriver:
         self.current_speed_b = 0
         self.current_direction = 'stopped'
 
-    def gradual_stop(self, ramp_time=3.0, steps=10):
+    def gradual_stop(self, ramp_time=1.0, steps=10):
         # Gradual stop by ramping down to zero
         self.current_speed_a, self.current_speed_b = self.ramp_speed(
             self.pwmA, self.pwmB,
@@ -182,39 +188,39 @@ if __name__ == "__main__":
     set_speed = 55
 
     try:
-        print("Test 1: move forward without turning 3s")
+        print("Test 1: move forward without turning")
         motor.forward(set_speed)
-        time.sleep(3)
+        time.sleep(2)
         motor.gradual_stop()
         time.sleep(2)
         
-        print("Test 2: move forward with right turn turning 3s")
+        print("Test 2: move forward with right turn turning")
         motor.forward(set_speed, turn=50)
-        time.sleep(3)
+        time.sleep(2)
         motor.gradual_stop()
         time.sleep(2)
         
-        print("Test 3: move forward with left turning 3s")
+        print("Test 3: move forward with left turning")
         motor.forward(set_speed, turn=-50)
-        time.sleep(3)
+        time.sleep(2)
         motor.gradual_stop()
         time.sleep(2)
 
-        print("Test 4: move backwards 3s")
+        print("Test 4: move backwards")
         motor.backward(set_speed)
-        time.sleep(3)
+        time.sleep(2)
         motor.gradual_stop()
         time.sleep(2)
         
-        print("Test 5: spin right 3s")
+        print("Test 5: spin right")
         motor.spin(set_speed, direction='right')
-        time.sleep(3)
+        time.sleep(2)
         motor.stop()
         time.sleep(2)
 
-        print("Test 6: spin left 3s")
+        print("Test 6: spin left")
         motor.spin(set_speed, direction='left')
-        time.sleep(3)
+        time.sleep(2)
         motor.stop()
         time.sleep(2)
 
@@ -222,9 +228,3 @@ if __name__ == "__main__":
         motor.forward(set_speed)
         motor.gradual_stop()
         
-        print("Finished tests!")
-        
-    except KeyboardInterrupt:
-        pass
-    finally:
-        motor.cleanup()
