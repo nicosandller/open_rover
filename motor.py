@@ -163,7 +163,7 @@ if __name__ == "__main__":
         motor.stop()
         time.sleep(2)
         
-        print("Test 3: move forward with right turn")
+        print("Test 3: move forward with rigth turn")
         for _ in range(8):
             motor.move(set_speed, turn_factor=75)
             time.sleep(0.25)
@@ -176,8 +176,22 @@ if __name__ == "__main__":
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
+
+        print("Test 5: move forward with left turn")
+        for _ in range(8):
+            motor.move(set_speed, turn_factor=-75)
+            time.sleep(0.25)
+        motor.stop()
+        time.sleep(2)
+
+        print("Test 6: move backward with left turn")
+        for _ in range(8):
+            motor.move(-set_speed,  turn_factor=-75)
+            time.sleep(0.25)
+        motor.stop()
+        time.sleep(2)
         
-        print("Test 4: spin right")
+        print("Test 7: spin right")
         motor.spin(20, direction='right')
         time.sleep(2)
         motor.stop()
