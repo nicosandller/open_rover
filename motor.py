@@ -35,8 +35,8 @@ class MotorDriver:
         self.pwmB.start(0)
 
         # Current speed tracking
-        self.current_speed_a = 0
-        self.current_speed_b = 0
+        self.current_speed_right = 0
+        self.current_speed_left = 0
 
         # Minimum speed threshold
         self.MIN_DUTY_CYCLE = 45
@@ -75,15 +75,15 @@ class MotorDriver:
         abs_set_speed = abs(set_speed)
 
         # Increment current speeds towards the set speed using modified steps
-        if self.current_speed_a < abs_set_speed:
-            self.current_speed_a = min(self.current_speed_a + left_speed_step, abs_set_speed)
-        elif self.current_speed_a > abs_set_speed:
-            self.current_speed_a = max(self.current_speed_a - left_speed_step, abs_set_speed)
+        if self.current_speed_right < abs_set_speed:
+            self.current_speed_right = min(self.current_speed_right + right_speed_step, abs_set_speed)
+        elif self.current_speed_right > abs_set_speed:
+            self.current_speed_right = max(self.current_speed_right - right_speed_step, abs_set_speed)
 
-        if self.current_speed_b < abs_set_speed:
-            self.current_speed_b = min(self.current_speed_b + right_speed_step, abs_set_speed)
-        elif self.current_speed_b > abs_set_speed:
-            self.current_speed_b = max(self.current_speed_b - right_speed_step, abs_set_speed)
+        if self.current_speed_left < abs_set_speed:
+            self.current_speed_left = min(self.current_speed_left + left_speed_step, abs_set_speed)
+        elif self.current_speed_left > abs_set_speed:
+            self.current_speed_left = max(self.current_speed_left - left_speed_step, abs_set_speed)
 
         # Set the direction for both motors based on the sign of set_speed
         if set_speed >= 0:  # Forward
@@ -98,8 +98,8 @@ class MotorDriver:
             GPIO.output(self.IN4, GPIO.HIGH)
 
         # Apply mapped speeds to PWM
-        self.pwmA.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_a))
-        self.pwmB.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_b))
+        self.pwmA.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_right))
+        self.pwmB.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_left))
 
     def spin(self, set_speed, direction='right'):
         """
@@ -132,8 +132,8 @@ class MotorDriver:
         GPIO.output(self.IN4, GPIO.LOW)
         self.pwmA.ChangeDutyCycle(0)
         self.pwmB.ChangeDutyCycle(0)
-        self.current_speed_a = 0
-        self.current_speed_b = 0
+        self.current_speed_right = 0
+        self.current_speed_left = 0
 
     def cleanup(self):
         self.pwmA.stop()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     print("starting motor tests...")
     time.sleep(3)
 
-    set_speed = 80
+    set_speed = 40
 
     try:
         print("Test 1: move forward without turning")
@@ -165,34 +165,40 @@ if __name__ == "__main__":
         
         print("Test 3: move forward with rigth turn")
         for _ in range(8):
-            motor.move(set_speed, turn_factor=75)
+            motor.move(set_speed, turn_factor=85)
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
 
         print("Test 4: move backward with right turn")
         for _ in range(8):
-            motor.move(-set_speed,  turn_factor=75)
+            motor.move(-set_speed,  turn_factor=85)
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
 
         print("Test 5: move forward with left turn")
         for _ in range(8):
-            motor.move(set_speed, turn_factor=-75)
+            motor.move(set_speed, turn_factor=-85)
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
 
         print("Test 6: move backward with left turn")
         for _ in range(8):
-            motor.move(-set_speed,  turn_factor=-75)
+            motor.move(-set_speed,  turn_factor=-85)
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
         
         print("Test 7: spin right")
         motor.spin(20, direction='right')
+        time.sleep(2)
+        motor.stop()
+        time.sleep(2)
+
+        print("Test 7: spin left")
+        motor.spin(20, direction='left')
         time.sleep(2)
         motor.stop()
         time.sleep(2)
