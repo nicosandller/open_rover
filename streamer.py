@@ -11,8 +11,8 @@ from edge_impulse_linux.image import ImageImpulseRunner
 
 from secrets import api_key
 from config import (width, height, channels, frames_to_skip, fps, upload_threshold, stickiness)
-from utils import upload_image_to_edge_impulse, draw_bounding_boxes
-from camera_handler import CameraHandler
+from utils import upload_image_to_edge_impulse
+from camera_streamer.camera import CameraHandler
 
 app = Flask(__name__)
 
