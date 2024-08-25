@@ -42,7 +42,7 @@ class MotorDriver:
         self.MIN_DUTY_CYCLE = 45
 
         # Incremental step size for speed adjustment
-        self.speed_step = 10
+        self.speed_step = 5
 
     def map_speed_to_duty_cycle(self, speed):
         """
@@ -138,30 +138,30 @@ if __name__ == "__main__":
 
     try:
         print("Test 1: move forward without turning")
-        for _ in range(5):
+        for _ in range(8):
             motor.move(set_speed)
-            time.sleep(1)
+            time.sleep(0.25)
         motor.stop()
         time.sleep(2)
         
         print("Test 2: move forward with right turn turning")
-        for _ in range(5):
-            motor.move(set_speed, turn_factor=50)
-            time.sleep(1)
+        for _ in range(8):
+            motor.move(set_speed, turn_factor=75)
+            time.sleep(0.25)
         motor.stop()
         time.sleep(2)
         
         print("Test 3: move forward with left turning")
-        for _ in range(5):
-            motor.move(set_speed, turn_factor=-50)
-            time.sleep(1)
+        for _ in range(8):
+            motor.move(set_speed, turn_factor=-75)
+            time.sleep(0.25)
         motor.stop()
         time.sleep(2)
 
         print("Test 4: move backward")
-        for _ in range(5):
+        for _ in range(8):
             motor.move(-set_speed)
-            time.sleep(1)
+            time.sleep(0.25)
         motor.stop()
         time.sleep(2)
         
