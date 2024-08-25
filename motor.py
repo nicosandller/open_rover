@@ -60,25 +60,30 @@ class MotorDriver:
         :param set_speed: Target speed for the movement (-100 to +100).
         :param turn_factor: Turn factor from -100 (full left) to +100 (full right).
         """
-        # Calculate absolute desired speeds for left and right motors
-        abs_speed = abs(set_speed)
+        # Calculate the base speed step
+        base_speed_step = self.speed_step
+
+        # Calculate speed steps for left and right motors based on turn_factor
         if turn_factor >= 0:
-            left_target_speed = abs_speed
-            right_target_speed = abs_speed * (1 - turn_factor / 100)
+            left_speed_step = base_speed_step
+            right_speed_step = base_speed_step * (1 - turn_factor / 100)
         else:
-            right_target_speed = abs_speed
-            left_target_speed = abs_speed * (1 + turn_factor / 100)
+            right_speed_step = base_speed_step
+            left_speed_step = base_speed_step * (1 + turn_factor / 100)
 
-        # Increment current speeds towards target speeds using absolute values
-        if self.current_speed_a < left_target_speed:
-            self.current_speed_a = min(self.current_speed_a + self.speed_step, left_target_speed)
-        elif self.current_speed_a > left_target_speed:
-            self.current_speed_a = max(self.current_speed_a - self.speed_step, left_target_speed)
+        # Use absolute value of set_speed for comparison, but maintain its sign for direction
+        abs_set_speed = abs(set_speed)
 
-        if self.current_speed_b < right_target_speed:
-            self.current_speed_b = min(self.current_speed_b + self.speed_step, right_target_speed)
-        elif self.current_speed_b > right_target_speed:
-            self.current_speed_b = max(self.current_speed_b - self.speed_step, right_target_speed)
+        # Increment current speeds towards the set speed using modified steps
+        if self.current_speed_a < abs_set_speed:
+            self.current_speed_a = min(self.current_speed_a + left_speed_step, abs_set_speed)
+        elif self.current_speed_a > abs_set_speed:
+            self.current_speed_a = max(self.current_speed_a - left_speed_step, abs_set_speed)
+
+        if self.current_speed_b < abs_set_speed:
+            self.current_speed_b = min(self.current_speed_b + right_speed_step, abs_set_speed)
+        elif self.current_speed_b > abs_set_speed:
+            self.current_speed_b = max(self.current_speed_b - right_speed_step, abs_set_speed)
 
         # Set the direction for both motors based on the sign of set_speed
         if set_speed >= 0:  # Forward
@@ -144,19 +149,19 @@ if __name__ == "__main__":
     set_speed = 80
 
     try:
-        print("Test 1: move forward without turning")
-        for _ in range(8):
-            motor.move(set_speed)
-            time.sleep(0.25)
-        motor.stop()
-        time.sleep(2)
+        # print("Test 1: move forward without turning")
+        # for _ in range(8):
+        #     motor.move(set_speed)
+        #     time.sleep(0.25)
+        # motor.stop()
+        # time.sleep(2)
 
-        print("Test 2: move backward")
-        for _ in range(8):
-            motor.move(-set_speed)
-            time.sleep(0.25)
-        motor.stop()
-        time.sleep(2)
+        # print("Test 2: move backward")
+        # for _ in range(8):
+        #     motor.move(-set_speed)
+        #     time.sleep(0.25)
+        # motor.stop()
+        # time.sleep(2)
         
         print("Test 3: move forward with right turn turning")
         for _ in range(8):
@@ -165,11 +170,11 @@ if __name__ == "__main__":
         motor.stop()
         time.sleep(2)
         
-        print("Test 4: spin right")
-        motor.spin(20, direction='right')
-        time.sleep(2)
-        motor.stop()
-        time.sleep(2)
+        # print("Test 4: spin right")
+        # motor.spin(20, direction='right')
+        # time.sleep(2)
+        # motor.stop()
+        # time.sleep(2)
 
         print("Finished tests!")
         
