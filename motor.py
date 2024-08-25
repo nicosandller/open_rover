@@ -92,11 +92,17 @@ class MotorDriver:
 
     def forward(self, speed, turn=0):
         speed = max(self.MIN_SPEED, speed)
+        turn_adjustment = abs(turn) * (speed - self.MIN_SPEED) / 100
+        
         if turn > 0:
+            # Turning right: left motor speed is set to the base speed,
+            # right motor speed is reduced by the turn adjustment
             left_speed = speed
-            right_speed = max(self.MIN_SPEED, speed * (1 - turn / 100))
+            right_speed = max(self.MIN_SPEED, speed - turn_adjustment)
         elif turn < 0:
-            left_speed = max(self.MIN_SPEED, speed * (1 + turn / 100))
+            # Turning left: right motor speed is set to the base speed,
+            # left motor speed is reduced by the turn adjustment
+            left_speed = max(self.MIN_SPEED, speed - turn_adjustment)
             right_speed = speed
         else:
             left_speed = speed
@@ -181,6 +187,7 @@ class MotorDriver:
 
 # Test the MotorDriver class
 if __name__ == "__main__":
+    # from motor_handler import MotorDriver
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
     print("starting motor tests...")
     time.sleep(3)
