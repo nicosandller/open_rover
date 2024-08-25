@@ -61,13 +61,13 @@ class MotorDriver:
         :param turn_factor: Turn factor from -100 (full left) to +100 (full right).
         """
         # Calculate absolute desired speeds for left and right motors
-        set_speed = abs(set_speed)
+        abs_speed = abs(set_speed)
         if turn_factor >= 0:
-            left_target_speed = set_speed
-            right_target_speed = set_speed * (1 - turn_factor / 100)
+            left_target_speed = abs_speed
+            right_target_speed = abs_speed * (1 - turn_factor / 100)
         else:
-            right_target_speed = set_speed
-            left_target_speed = set_speed * (1 + turn_factor / 100)
+            right_target_speed = abs_speed
+            left_target_speed = abs_speed * (1 + turn_factor / 100)
 
         # Increment current speeds towards target speeds using absolute values
         if self.current_speed_a < left_target_speed:
@@ -80,12 +80,17 @@ class MotorDriver:
         elif self.current_speed_b > right_target_speed:
             self.current_speed_b = max(self.current_speed_b - self.speed_step, right_target_speed)
 
-        # Set the direction for both motors based on the original sign of set_speed
-        direction_forward = set_speed >= 0
-        GPIO.output(self.IN1, GPIO.HIGH if direction_forward else GPIO.LOW)
-        GPIO.output(self.IN2, GPIO.LOW if direction_forward else GPIO.HIGH)
-        GPIO.output(self.IN3, GPIO.HIGH if direction_forward else GPIO.LOW)
-        GPIO.output(self.IN4, GPIO.LOW if direction_forward else GPIO.HIGH)
+        # Set the direction for both motors based on the sign of set_speed
+        if set_speed >= 0:  # Forward
+            GPIO.output(self.IN1, GPIO.HIGH)
+            GPIO.output(self.IN2, GPIO.LOW)
+            GPIO.output(self.IN3, GPIO.HIGH)
+            GPIO.output(self.IN4, GPIO.LOW)
+        else:  # Backward
+            GPIO.output(self.IN1, GPIO.LOW)
+            GPIO.output(self.IN2, GPIO.HIGH)
+            GPIO.output(self.IN3, GPIO.LOW)
+            GPIO.output(self.IN4, GPIO.HIGH)
 
         # Apply mapped speeds to PWM
         self.pwmA.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_a))
