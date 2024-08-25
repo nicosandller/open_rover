@@ -228,3 +228,9 @@ if __name__ == "__main__":
         motor.forward(set_speed)
         motor.gradual_stop()
         
+        print("Finished tests!")
+        
+    except KeyboardInterrupt:
+        pass
+    finally:
+        motor.cleanup()
