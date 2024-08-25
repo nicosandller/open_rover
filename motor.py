@@ -57,10 +57,11 @@ class MotorDriver:
         """
         Gradually adjust the speed and direction based on set speed and turn factor.
         
-        :param set_speed: Target speed for the movement (-100 -> +100).
+        :param set_speed: Target speed for the movement (-100 to +100).
         :param turn_factor: Turn factor from -100 (full left) to +100 (full right).
         """
-        # Calculate desired speeds for left and right motors
+        # Calculate absolute desired speeds for left and right motors
+        set_speed = abs(set_speed)
         if turn_factor >= 0:
             left_target_speed = set_speed
             right_target_speed = set_speed * (1 - turn_factor / 100)
@@ -68,7 +69,7 @@ class MotorDriver:
             right_target_speed = set_speed
             left_target_speed = set_speed * (1 + turn_factor / 100)
 
-        # Increment current speeds towards target speeds
+        # Increment current speeds towards target speeds using absolute values
         if self.current_speed_a < left_target_speed:
             self.current_speed_a = min(self.current_speed_a + self.speed_step, left_target_speed)
         elif self.current_speed_a > left_target_speed:
@@ -79,11 +80,12 @@ class MotorDriver:
         elif self.current_speed_b > right_target_speed:
             self.current_speed_b = max(self.current_speed_b - self.speed_step, right_target_speed)
 
-        # Set the direction for both motors (assuming forward movement)
-        GPIO.output(self.IN1, GPIO.HIGH if set_speed >= 0 else GPIO.LOW)
-        GPIO.output(self.IN2, GPIO.LOW if set_speed >= 0 else GPIO.HIGH)
-        GPIO.output(self.IN3, GPIO.HIGH if set_speed >= 0 else GPIO.LOW)
-        GPIO.output(self.IN4, GPIO.LOW if set_speed >= 0 else GPIO.HIGH)
+        # Set the direction for both motors based on the original sign of set_speed
+        direction_forward = set_speed >= 0
+        GPIO.output(self.IN1, GPIO.HIGH if direction_forward else GPIO.LOW)
+        GPIO.output(self.IN2, GPIO.LOW if direction_forward else GPIO.HIGH)
+        GPIO.output(self.IN3, GPIO.HIGH if direction_forward else GPIO.LOW)
+        GPIO.output(self.IN4, GPIO.LOW if direction_forward else GPIO.HIGH)
 
         # Apply mapped speeds to PWM
         self.pwmA.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_a))
@@ -157,36 +159,9 @@ if __name__ == "__main__":
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
-
-        print("Test 4: move backward")
-        for _ in range(8):
-            motor.move(-set_speed)
-            time.sleep(0.25)
-        motor.stop()
-        time.sleep(2)
-        
-        print("Test 3: move forward with left turning")
-        for _ in range(8):
-            motor.move(set_speed, turn_factor=-75)
-            time.sleep(0.25)
-        motor.stop()
-        time.sleep(2)
-
-        print("Test 4: move backward")
-        for _ in range(8):
-            motor.move(-set_speed)
-            time.sleep(0.25)
-        motor.stop()
-        time.sleep(2)
         
         print("Test 5: spin right")
         motor.spin(20, direction='right')
-        time.sleep(2)
-        motor.stop()
-        time.sleep(2)
-
-        print("Test 6: spin left")
-        motor.spin(20, direction='left')
         time.sleep(2)
         motor.stop()
         time.sleep(2)
