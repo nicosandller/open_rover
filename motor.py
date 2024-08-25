@@ -51,6 +51,11 @@ class MotorDriver:
         :param speed: Input speed from 0 to 100.
         :return: Mapped duty cycle from 45 to 100.
         """
+        # if speed is 0 then duty cycle must be 0, not MIN_DUTY_CYCLE.
+        if speed == 0:
+            return 0
+
+        # Else return duty cycle from 45 to 100
         return self.MIN_DUTY_CYCLE + (speed * (100 - self.MIN_DUTY_CYCLE) / 100)
 
     def move(self, set_speed, turn_factor=0):
