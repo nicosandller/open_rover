@@ -34,109 +34,70 @@ class MotorDriver:
         self.pwmA.start(0)
         self.pwmB.start(0)
 
-        # Current speed and direction tracking
+        # Current speed tracking
         self.current_speed_a = 0
         self.current_speed_b = 0
-        self.current_direction = 'stopped'  # 'forward', 'backward', or 'stopped'
 
         # Minimum speed threshold
-        self.MIN_SPEED = 45
+        self.MIN_DUTY_CYCLE = 45
 
-    def ramp_speed(self, pwm_a, pwm_b, current_speed_a, current_speed_b, target_speed_a, target_speed_b, direction, ramp_time=1.0, steps=10):
+        # Incremental step size for speed adjustment
+        self.speed_step = 10
+
+    def map_speed_to_duty_cycle(self, speed):
         """
-        Gradually ramps the speed of both motors to their target speeds, considering direction changes.
+        Maps the input speed (0-100) to a duty cycle (45-100).
         
-        :param pwm_a: The PWM object for motor A.
-        :param pwm_b: The PWM object for motor B.
-        :param current_speed_a: The current speed of motor A.
-        :param current_speed_b: The current speed of motor B.
-        :param target_speed_a: The target speed for motor A.
-        :param target_speed_b: The target speed for motor B.
-        :param direction: The new direction ('forward' or 'backward').
-        :param ramp_time: The total time to reach the target speed.
-        :param steps: The number of steps to increase the speed.
+        :param speed: Input speed from 0 to 100.
+        :return: Mapped duty cycle from 45 to 100.
         """
-        if self.current_direction != direction and self.current_direction != 'stopped':
-            # First, ramp down to zero
-            steps_to_zero = steps
-            step_delay = ramp_time / steps_to_zero
-            speed_step_a = -current_speed_a / steps_to_zero
-            speed_step_b = -current_speed_b / steps_to_zero
-            
-            for _ in range(steps_to_zero):
-                current_speed_a += speed_step_a
-                current_speed_b += speed_step_b
-                pwm_a.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_a)))
-                pwm_b.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_b)))
-                time.sleep(step_delay)
-            
-            self.current_direction = 'stopped'
-            current_speed_a = 0
-            current_speed_b = 0
+        return self.MIN_DUTY_CYCLE + (speed * (100 - self.MIN_DUTY_CYCLE) / 100)
 
-        # Now, ramp up to the target speed in the new direction
-        steps_to_target = steps
-        step_delay = ramp_time / steps_to_target
-        speed_step_a = (target_speed_a - current_speed_a) / steps_to_target
-        speed_step_b = (target_speed_b - current_speed_b) / steps_to_target
+    def move(self, set_speed, turn_factor=0):
+        """
+        Gradually adjust the speed and direction based on set speed and turn factor.
         
-        for _ in range(steps_to_target):
-            current_speed_a += speed_step_a
-            current_speed_b += speed_step_b
-            pwm_a.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_a)))
-            pwm_b.ChangeDutyCycle(max(self.MIN_SPEED, min(100, current_speed_b)))
-            time.sleep(step_delay)
-        
-        self.current_direction = direction
-        return target_speed_a, target_speed_b
-
-    def forward(self, speed, turn=0):
-        speed = max(self.MIN_SPEED, speed)
-        turn_adjustment = abs(turn) * (speed - self.MIN_SPEED) / 100
-        
-        if turn > 0:
-            # Turning right: left motor speed is set to the base speed,
-            # right motor speed is reduced by the turn adjustment
-            left_speed = speed
-            right_speed = max(self.MIN_SPEED, speed - turn_adjustment)
-        elif turn < 0:
-            # Turning left: right motor speed is set to the base speed,
-            # left motor speed is reduced by the turn adjustment
-            left_speed = max(self.MIN_SPEED, speed - turn_adjustment)
-            right_speed = speed
+        :param set_speed: Target speed for the movement (-100 -> +100).
+        :param turn_factor: Turn factor from -100 (full left) to +100 (full right).
+        """
+        # Calculate desired speeds for left and right motors
+        if turn_factor >= 0:
+            left_target_speed = set_speed
+            right_target_speed = set_speed * (1 - turn_factor / 100)
         else:
-            left_speed = speed
-            right_speed = speed
+            right_target_speed = set_speed
+            left_target_speed = set_speed * (1 + turn_factor / 100)
 
-        GPIO.output(self.IN1, GPIO.HIGH)
-        GPIO.output(self.IN2, GPIO.LOW)
-        GPIO.output(self.IN3, GPIO.HIGH)
-        GPIO.output(self.IN4, GPIO.LOW)
+        # Increment current speeds towards target speeds
+        if self.current_speed_a < left_target_speed:
+            self.current_speed_a = min(self.current_speed_a + self.speed_step, left_target_speed)
+        elif self.current_speed_a > left_target_speed:
+            self.current_speed_a = max(self.current_speed_a - self.speed_step, left_target_speed)
+
+        if self.current_speed_b < right_target_speed:
+            self.current_speed_b = min(self.current_speed_b + self.speed_step, right_target_speed)
+        elif self.current_speed_b > right_target_speed:
+            self.current_speed_b = max(self.current_speed_b - self.speed_step, right_target_speed)
+
+        # Set the direction for both motors (assuming forward movement)
+        GPIO.output(self.IN1, GPIO.HIGH if set_speed >= 0 else GPIO.LOW)
+        GPIO.output(self.IN2, GPIO.LOW if set_speed >= 0 else GPIO.HIGH)
+        GPIO.output(self.IN3, GPIO.HIGH if set_speed >= 0 else GPIO.LOW)
+        GPIO.output(self.IN4, GPIO.LOW if set_speed >= 0 else GPIO.HIGH)
+
+        # Apply mapped speeds to PWM
+        self.pwmA.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_a))
+        self.pwmB.ChangeDutyCycle(self.map_speed_to_duty_cycle(self.current_speed_b))
+
+    def spin(self, set_speed, direction='right'):
+        """
+        Spin the rover in place.
         
-        self.current_speed_a, self.current_speed_b = self.ramp_speed(
-            self.pwmA, self.pwmB,
-            self.current_speed_a, self.current_speed_b,
-            left_speed, right_speed,
-            'forward'
-        )
+        :param set_speed: Speed for the spin (0-100).
+        :param direction: Direction of spin ('right' or 'left').
+        """
+        base_speed = abs(set_speed)  # Use absolute value of speed for spinning
 
-    def backward(self, speed):
-        speed = max(self.MIN_SPEED, speed)
-        GPIO.output(self.IN1, GPIO.LOW)
-        GPIO.output(self.IN2, GPIO.HIGH)
-        GPIO.output(self.IN3, GPIO.LOW)
-        GPIO.output(self.IN4, GPIO.HIGH)
-        
-        self.current_speed_a, self.current_speed_b = self.ramp_speed(
-            self.pwmA, self.pwmB,
-            self.current_speed_a, self.current_speed_b,
-            speed, speed,
-            'backward'
-        )
-
-    def spin(self, speed, direction='right'):
-        speed = max(self.MIN_SPEED, speed)
-        # Set the spin direction and speed directly without ramping up
         if direction == 'right':
             GPIO.output(self.IN1, GPIO.HIGH)
             GPIO.output(self.IN2, GPIO.LOW)
@@ -148,12 +109,11 @@ class MotorDriver:
             GPIO.output(self.IN3, GPIO.HIGH)
             GPIO.output(self.IN4, GPIO.LOW)
         
-        self.pwmA.ChangeDutyCycle(speed)
-        self.pwmB.ChangeDutyCycle(speed)
-        self.current_direction = 'spin'
+        self.pwmA.ChangeDutyCycle(self.map_speed_to_duty_cycle(base_speed))
+        self.pwmB.ChangeDutyCycle(self.map_speed_to_duty_cycle(base_speed))
 
     def stop(self):
-        # Immediate stop
+        # Stop immediately and halt ongoing movement
         GPIO.output(self.IN1, GPIO.LOW)
         GPIO.output(self.IN2, GPIO.LOW)
         GPIO.output(self.IN3, GPIO.LOW)
@@ -162,23 +122,6 @@ class MotorDriver:
         self.pwmB.ChangeDutyCycle(0)
         self.current_speed_a = 0
         self.current_speed_b = 0
-        self.current_direction = 'stopped'
-
-    def gradual_stop(self, ramp_time=1.0, steps=10):
-        # Gradual stop by ramping down to zero
-        self.current_speed_a, self.current_speed_b = self.ramp_speed(
-            self.pwmA, self.pwmB,
-            self.current_speed_a, self.current_speed_b,
-            0, 0,
-            'stopped',
-            ramp_time=ramp_time,
-            steps=steps
-        )
-        GPIO.output(self.IN1, GPIO.LOW)
-        GPIO.output(self.IN2, GPIO.LOW)
-        GPIO.output(self.IN3, GPIO.LOW)
-        GPIO.output(self.IN4, GPIO.LOW)
-        self.current_direction = 'stopped'
 
     def cleanup(self):
         self.pwmA.stop()
@@ -187,35 +130,38 @@ class MotorDriver:
 
 # Test the MotorDriver class
 if __name__ == "__main__":
-    # from motor_handler import MotorDriver
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
     print("starting motor tests...")
     time.sleep(3)
 
-    set_speed = 55
+    set_speed = 65
 
     try:
         print("Test 1: move forward without turning")
-        motor.forward(set_speed)
-        time.sleep(2)
+        for _ in range(5):
+            motor.move(set_speed)
+            time.sleep(1)
         motor.stop()
         time.sleep(2)
         
         print("Test 2: move forward with right turn turning")
-        motor.forward(set_speed, turn=50)
-        time.sleep(2)
+        for _ in range(5):
+            motor.move(set_speed, turn_factor=50)
+            time.sleep(1)
         motor.stop()
         time.sleep(2)
         
         print("Test 3: move forward with left turning")
-        motor.forward(set_speed, turn=-50)
-        time.sleep(2)
+        for _ in range(5):
+            motor.move(set_speed, turn_factor=-50)
+            time.sleep(1)
         motor.stop()
         time.sleep(2)
 
-        print("Test 4: move backwards")
-        motor.backward(set_speed)
-        time.sleep(2)
+        print("Test 4: move backward")
+        for _ in range(5):
+            motor.move(-set_speed)
+            time.sleep(1)
         motor.stop()
         time.sleep(2)
         
@@ -231,10 +177,6 @@ if __name__ == "__main__":
         motor.stop()
         time.sleep(2)
 
-        print("Test 7: gradual stop.")
-        motor.forward(set_speed)
-        motor.gradual_stop()
-        
         print("Finished tests!")
         
     except KeyboardInterrupt:
