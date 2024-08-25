@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print("starting motor tests...")
     time.sleep(3)
 
-    set_speed = 65
+    set_speed = 80
 
     try:
         print("Test 1: move forward without turning")
@@ -166,13 +166,13 @@ if __name__ == "__main__":
         time.sleep(2)
         
         print("Test 5: spin right")
-        motor.spin(set_speed, direction='right')
+        motor.spin(20, direction='right')
         time.sleep(2)
         motor.stop()
         time.sleep(2)
 
         print("Test 6: spin left")
-        motor.spin(set_speed, direction='left')
+        motor.spin(20, direction='left')
         time.sleep(2)
         motor.stop()
         time.sleep(2)
