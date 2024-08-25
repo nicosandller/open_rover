@@ -149,32 +149,39 @@ if __name__ == "__main__":
     set_speed = 80
 
     try:
-        # print("Test 1: move forward without turning")
-        # for _ in range(8):
-        #     motor.move(set_speed)
-        #     time.sleep(0.25)
-        # motor.stop()
-        # time.sleep(2)
+        print("Test 1: move forward without turning")
+        for _ in range(8):
+            motor.move(set_speed)
+            time.sleep(0.25)
+        motor.stop()
+        time.sleep(2)
 
-        # print("Test 2: move backward")
-        # for _ in range(8):
-        #     motor.move(-set_speed)
-        #     time.sleep(0.25)
-        # motor.stop()
-        # time.sleep(2)
+        print("Test 2: move backward")
+        for _ in range(8):
+            motor.move(-set_speed)
+            time.sleep(0.25)
+        motor.stop()
+        time.sleep(2)
         
-        print("Test 3: move forward with right turn turning")
+        print("Test 3: move forward with right turn")
         for _ in range(8):
             motor.move(set_speed, turn_factor=75)
             time.sleep(0.25)
         motor.stop()
         time.sleep(2)
+
+        print("Test 4: move backward with right turn")
+        for _ in range(8):
+            motor.move(-set_speed,  turn_factor=75)
+            time.sleep(0.25)
+        motor.stop()
+        time.sleep(2)
         
-        # print("Test 4: spin right")
-        # motor.spin(20, direction='right')
-        # time.sleep(2)
-        # motor.stop()
-        # time.sleep(2)
+        print("Test 4: spin right")
+        motor.spin(20, direction='right')
+        time.sleep(2)
+        motor.stop()
+        time.sleep(2)
 
         print("Finished tests!")
         
