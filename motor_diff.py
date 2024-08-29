@@ -126,28 +126,45 @@ class MotorDriver:
         self.pwmA.ChangeDutyCycle(abs(duty_cycle_l))
         self.pwmB.ChangeDutyCycle(abs(duty_cycle_r))
 
-
     def spin(self, angular_velocity):
         """
         Spin the rover in place based on angular velocity.
         
-        :param angular_velocity: Desired angular velocity (-100 to +100).
+        :param angular_velocity: Desired angular velocity in rad/s. Positive values spin left, negative values spin right.
         """
-        base_speed = abs(angular_velocity)  # Use absolute value of angular velocity for spinning
+        if self.debug:
+            print(f"Spinning with angular velocity: {angular_velocity}")
 
+        # Set the direction for both motors based on the sign of set_speed
         if angular_velocity >= 0:  # Spin left
             GPIO.output(self.IN1, GPIO.LOW)
             GPIO.output(self.IN2, GPIO.HIGH)
             GPIO.output(self.IN3, GPIO.HIGH)
             GPIO.output(self.IN4, GPIO.LOW)
+            if self.debug:
+                print("Spinning left")
         else:  # Spin right
             GPIO.output(self.IN1, GPIO.HIGH)
             GPIO.output(self.IN2, GPIO.LOW)
             GPIO.output(self.IN3, GPIO.LOW)
             GPIO.output(self.IN4, GPIO.HIGH)
+            if self.debug:
+                print("Spinning right")
+
+        # Use absolute value of angular velocity for spinning
+        base_speed = abs(angular_velocity)  # Use absolute value of angular velocity for spinning
+        # Convert angular velocity to linear velocity for wheel speeds
+        wheel_speed = base_speed * (self.wheel_width / 2)
+        duty_cycle = self.map_velocity_to_duty_cycle(wheel_speed)
         
-        self.pwmA.ChangeDutyCycle(self.map_velocity_to_duty_cycle(base_speed))
-        self.pwmB.ChangeDutyCycle(self.map_velocity_to_duty_cycle(base_speed))
+        if self.debug:
+            print(f"Wheel speed: {wheel_speed}, Duty cycle: {duty_cycle}")
+
+        self.pwmA.ChangeDutyCycle(duty_cycle)
+        self.pwmB.ChangeDutyCycle(duty_cycle)
+
+        if self.debug:
+            print(f"PWM duty cycles set to: {duty_cycle}")
 
     def stop(self):
         """
