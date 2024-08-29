@@ -257,27 +257,27 @@ if __name__ == "__main__":
 
     try:
         print("Test 1: Move forward with no angular velocity")
-        motor._timed_move(linear_velocity=1, angular_velocity=0, seconds=0.5)
+        motor._timed_move(linear_velocity=1, angular_velocity=0, seconds=1)
         time.sleep(2)
 
         print("Test 2: Move backward with no angular velocity")
-        motor._timed_move(linear_velocity=-1, angular_velocity=0, seconds=0.5)
+        motor._timed_move(linear_velocity=-1, angular_velocity=0, seconds=1)
         time.sleep(2)
 
         print("Test 3: Move forward with left turn")
-        motor._timed_move(linear_velocity=1, angular_velocity=3, seconds=0.5)
+        motor._timed_move(linear_velocity=1, angular_velocity=3, seconds=1)
         time.sleep(2)
 
         print("Test 4: Move backwards back in place turning left")
-        motor._timed_move(linear_velocity=-1, angular_velocity=-3, seconds=0.5)
+        motor._timed_move(linear_velocity=-1, angular_velocity=-3, seconds=1)
         time.sleep(2)
 
         print("Test 5: Move forward with right turn")
-        motor._timed_move(linear_velocity=1, angular_velocity=-3, seconds=0.5)
+        motor._timed_move(linear_velocity=1, angular_velocity=-3, seconds=1)
         time.sleep(2)
 
         print("Test 6: Move backwards back in place turning right")
-        motor._timed_move(linear_velocity=-1, angular_velocity=3, seconds=0.5)
+        motor._timed_move(linear_velocity=-1, angular_velocity=3, seconds=1)
         time.sleep(2)
 
         print("Test 7: Spin left")
