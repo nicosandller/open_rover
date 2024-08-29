@@ -135,9 +135,9 @@ class MotorDriver:
         if self.debug:
             print(f"Left duty cycle: {duty_cycle_l:.2f}, Right duty cycle: {duty_cycle_r:.2f}")
             if duty_cycle_l > duty_cycle_r:
-                print("Turning left")
-            elif duty_cycle_r > duty_cycle_l:
                 print("Turning right")
+            elif duty_cycle_r > duty_cycle_l:
+                print("Turning left")
             else:
                 print("Moving straight")    
 
