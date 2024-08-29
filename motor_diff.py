@@ -150,15 +150,19 @@ class MotorDriver:
         self.pwmB.stop()
         GPIO.cleanup()
 
-    def _timed_move(self, linear_velocity, angular_velocity, time):
+    def _timed_move(self, linear_velocity, angular_velocity, seconds):
         print("Test 2: Move forward with left turn")
         self.move(linear_velocity=linear_velocity, angular_velocity=angular_velocity)
-        time.sleep(time)
+        time.sleep(seconds)
         self.stop()
 
 # Test the MotorDriver class
 if __name__ == "__main__":
+    # from motor_diff import MotorDriver
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=0.5)
+
+    # motor._timed_move(1, 3, 1)
+    
     print("starting motor tests...")
     time.sleep(3)
 
