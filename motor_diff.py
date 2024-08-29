@@ -72,7 +72,13 @@ class MotorDriver:
 
     def _calculate_wheel_speeds(self, linear_velocity, angular_velocity):
         """
-        Calculate wheel speeds based on linear and angular velocity.
+        Calculate wheel speeds based on linear and angular velocity. 
+        
+        When ther angular velocity is positive, the robot will turn left. When the angular velocity is negative, the robot will turn right.
+
+        :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
+        :param angular_velocity: Desired angular velocity of the robot (rad/s).
+        :return: Left and right wheel speeds (in m/s).
         """
         left_wheel_speed = linear_velocity - (angular_velocity * self.wheel_width / 2)
         right_wheel_speed = linear_velocity + (angular_velocity * self.wheel_width / 2)
