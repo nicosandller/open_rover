@@ -8,7 +8,7 @@ class MotorDriver:
 
     :param wheel_base_width: distance from wheel to wheel in centimeters).
     """
-    def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin, wheel_base_width, pwm_freq=1000):
+    def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin, wheel_base_width, pwm_freq=1000, debug=False):
         # Motor A (Left)
         self.IN1 = in1_pin
         self.IN2 = in2_pin
@@ -50,6 +50,7 @@ class MotorDriver:
         # Define max and min velocity for mapping
         self.V_max = 3.14  # Maximum linear velocity in m/s
         self.V_min = 0.31  # Minimum effective linear velocity in m/s
+        self.debug = debug
 
     def map_velocity_to_duty_cycle(self, velocity):
         """
@@ -83,10 +84,16 @@ class MotorDriver:
         # Calculate wheel velocities based on linear and angular velocity
         left_wheel_speed = linear_velocity - (angular_velocity * self.wheel_width / 2)
         right_wheel_speed = linear_velocity + (angular_velocity * self.wheel_width / 2)
+        # if debug is true, print the wheel speeds
+        if self.debug:   
+            print(f"Left wheel speed: {left_wheel_speed}, Right wheel speed: {right_wheel_speed}")
 
         # Map wheel velocities to PWM duty cycles
         duty_cycle_l = self.map_velocity_to_duty_cycle(left_wheel_speed)
         duty_cycle_r = self.map_velocity_to_duty_cycle(right_wheel_speed)
+        # Print duty cycles if debug is True
+        if self.debug:
+            print(f"Left duty cycle: {duty_cycle_l:.2f}, Right duty cycle: {duty_cycle_r:.2f}")
 
         # Set motor direction based on the sign of the velocities
         if left_wheel_speed >= 0:
@@ -103,9 +110,17 @@ class MotorDriver:
             GPIO.output(self.IN3, GPIO.LOW)
             GPIO.output(self.IN4, GPIO.HIGH)
 
+        # print direction of turn if debug is true
+        if self.debug:
+            if left_wheel_speed >= 0:
+                print("Turning left")
+            else:
+                print("Turning right")
+
         # Apply the calculated duty cycles to PWM
         self.pwmA.ChangeDutyCycle(abs(duty_cycle_l))
         self.pwmB.ChangeDutyCycle(abs(duty_cycle_r))
+
 
     def spin(self, angular_velocity):
         """
@@ -151,18 +166,44 @@ class MotorDriver:
         GPIO.cleanup()
 
     def _timed_move(self, linear_velocity, angular_velocity, seconds):
-        print("Test 2: Move forward with left turn")
+        """
+        Move the robot for a specified number of seconds.
+        
+        :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
+        :param angular_velocity: Desired angular velocity of the robot (rad/s).
+        :param seconds: Number of seconds to move the robot.
+        """
+        # loop
         self.move(linear_velocity=linear_velocity, angular_velocity=angular_velocity)
         time.sleep(seconds)
         self.stop()
 
+    # create a new internal method that takes an array of velocities and angular velocities and moves the robot at 0.2 second intervals with each set of velocities
+    def _variable_move(self, velocities, angular_velocities):
+        """
+        Move the robot with variable velocities and angular velocities.
+        
+        :param velocities: List of linear velocities.
+        :param angular_velocities: List of angular velocities.
+        """
+        for i in range(len(velocities)):
+            self.move(linear_velocity=velocities[i], angular_velocity=angular_velocities[i])
+            time.sleep(0.2)
+            if self.debug:
+                print(f"Moving with velocities: {velocities[i]} and angular velocities: {angular_velocities[i]}")
+
+        self.stop()
+
 # Test the MotorDriver class
+# from motor_diff import MotorDriver
+#motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=0.5, debug=True)
+# motor._timed_move(1, 3, 1)
+# motor._variable_move([1, 2, 3, 4], [1, 2, 3, 4])
+
+
 if __name__ == "__main__":
-    # from motor_diff import MotorDriver
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=0.5)
 
-    # motor._timed_move(1, 3, 1)
-    
     print("starting motor tests...")
     time.sleep(3)
 
