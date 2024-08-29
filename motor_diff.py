@@ -232,11 +232,11 @@ class MotorDriver:
         self.stop()
 
 # Test the MotorDriver class
-from motor_diff import MotorDriver
-motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
-motor._timed_move(1, 3, 1)
-motor._variable_move([1, 2, 5], [1, 2, 5])
-motor.cleanup()
+# from motor_diff import MotorDriver
+# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
+# motor._timed_move(1, 3, 1)
+# motor._variable_move([1, 2, 5], [1, 2, 5])
+# motor.cleanup()
 
 
 if __name__ == "__main__":
