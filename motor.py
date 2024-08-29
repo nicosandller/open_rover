@@ -250,7 +250,7 @@ class MotorDriver:
         self.stop()
 
 if __name__ == "__main__":
-    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22)
+    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
 
     print("starting motor tests...")
     time.sleep(3)
