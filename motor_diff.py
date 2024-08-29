@@ -74,7 +74,8 @@ class MotorDriver:
         """
         Calculate wheel speeds based on linear and angular velocity. 
         
-        When ther angular velocity is positive, the robot will turn left. When the angular velocity is negative, the robot will turn right.
+        When the angular velocity is positive, the robot will turn left. 
+        When the angular velocity is negative, the robot will turn right.
 
         :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
         :param angular_velocity: Desired angular velocity of the robot (rad/s).
@@ -148,6 +149,32 @@ class MotorDriver:
         self.pwmA.ChangeDutyCycle(abs(duty_cycle_r))
         self.pwmB.ChangeDutyCycle(abs(duty_cycle_l))
 
+    def _determine_spin_direction(self, angular_velocity):
+        """
+        Determine and set the spin direction based on angular velocity.
+
+        When the angular velocity is positive, the spin will be to the left. 
+        When the angular velocity is negative, the spin will be to the right.
+        
+        :param angular_velocity: Desired angular velocity in rad/s.
+        :return: Direction string ("left" or "right")
+        """
+        if angular_velocity >= 0:  # Spin left
+            # Set the A motor forward and B motor backward
+            GPIO.output(self.IN1, GPIO.HIGH)
+            GPIO.output(self.IN2, GPIO.LOW)
+            GPIO.output(self.IN3, GPIO.LOW)
+            GPIO.output(self.IN4, GPIO.HIGH)
+
+            return "left"
+        else:  # Spin right
+            # Set the A motor backward and B motor forward
+            GPIO.output(self.IN1, GPIO.LOW)
+            GPIO.output(self.IN2, GPIO.HIGH)
+            GPIO.output(self.IN3, GPIO.HIGH)
+            GPIO.output(self.IN4, GPIO.LOW)
+            return "right"
+
     def spin(self, angular_velocity):
         """
         Spin the rover in place based on angular velocity.
@@ -157,36 +184,23 @@ class MotorDriver:
         if self.debug:
             print(f"Spinning with angular velocity: {angular_velocity}")
 
-        # Set the direction for both motors based on the sign of set_speed
-        if angular_velocity >= 0:  # Spin left
-            GPIO.output(self.IN1, GPIO.LOW)
-            GPIO.output(self.IN2, GPIO.HIGH)
-            GPIO.output(self.IN3, GPIO.HIGH)
-            GPIO.output(self.IN4, GPIO.LOW)
-            if self.debug:
-                print("Spinning left")
-        else:  # Spin right
-            GPIO.output(self.IN1, GPIO.HIGH)
-            GPIO.output(self.IN2, GPIO.LOW)
-            GPIO.output(self.IN3, GPIO.LOW)
-            GPIO.output(self.IN4, GPIO.HIGH)
-            if self.debug:
-                print("Spinning right")
+        # Determine and set spin direction
+        direction = self._determine_spin_direction(angular_velocity)
 
-        # Use absolute value of angular velocity for spinning
-        base_speed = abs(angular_velocity)  # Use absolute value of angular velocity for spinning
-        # Convert angular velocity to linear velocity for wheel speeds
-        wheel_speed = base_speed * (self.wheel_width / 2)
+        if self.debug:
+            print(f"Spinning {direction}")
+
+        # Calculate wheel speed and duty cycle
+        base_speed = abs(angular_velocity)
+        wheel_speed = base_speed * self.wheel_width
         duty_cycle = self.map_velocity_to_duty_cycle(wheel_speed)
         
         if self.debug:
             print(f"Wheel speed: {wheel_speed}, Duty cycle: {duty_cycle}")
 
+        # Apply duty cycle to both motors
         self.pwmA.ChangeDutyCycle(duty_cycle)
         self.pwmB.ChangeDutyCycle(duty_cycle)
-
-        if self.debug:
-            print(f"PWM duty cycles set to: {duty_cycle}")
 
     def stop(self):
         """
@@ -237,14 +251,6 @@ class MotorDriver:
 
         self.stop()
 
-# Test the MotorDriver class
-# from motor_diff import MotorDriver
-# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
-# motor._timed_move(1, 3, 1)
-# motor._variable_move([1, 2, 5], [1, 2, 5])
-# motor.cleanup()
-
-
 if __name__ == "__main__":
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=0.5)
 
@@ -253,33 +259,24 @@ if __name__ == "__main__":
 
     try:
         print("Test 1: Move forward with no angular velocity")
-        motor.move(linear_velocity=1.5, angular_velocity=0)
-        time.sleep(3)
-        motor.stop()
+        motor._timed_move(linear_velocity=1, angular_velocity=0, seconds=0.5)
         time.sleep(2)
 
         print("Test 2: Move forward with left turn")
-        motor.move(linear_velocity=1.5, angular_velocity=3.0)
-        time.sleep(3)
-        motor.stop()
+        motor._timed_move(linear_velocity=1, angular_velocity=3, seconds=0.5)
         time.sleep(2)
 
-        print("Test 3: Move forward with right turn")
-        motor.move(linear_velocity=1.5, angular_velocity=-1.0)
-        time.sleep(3)
-        motor.stop()
+        print("Test 3: Move backwards back in place turning left")
+        motor._timed_move(linear_velocity=-1, angular_velocity=-3, seconds=0.5)
         time.sleep(2)
 
-        print("Test 4: Spin in place left")
-        motor.spin(angular_velocity=1.0)
-        time.sleep(2)
-        motor.stop()
+        # same tests but to the right
+        print("Test 4: Move forward with right turn")
+        motor._timed_move(linear_velocity=1, angular_velocity=-3, seconds=0.5)
         time.sleep(2)
 
-        print("Test 5: Spin in place right")
-        motor.spin(angular_velocity=-1.0)
-        time.sleep(2)
-        motor.stop()
+        print("Test 5: Move backwards back in place turning right")
+        motor._timed_move(linear_velocity=-1, angular_velocity=3, seconds=0.5)
         time.sleep(2)
 
         print("Finished tests!")
