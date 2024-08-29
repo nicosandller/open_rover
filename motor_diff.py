@@ -59,12 +59,47 @@ class MotorDriver:
         :param velocity: Desired linear velocity of the robot (in m/s).
         :return: Mapped duty cycle (45-100).
         """
-        # Clip velocity to ensure it's within the expected range
-        velocity = max(min(velocity, self.V_max), self.V_min)
+        # Use absolute value of velocity for mapping
+        abs_velocity = abs(velocity)
+        
+        # Clip absolute velocity to ensure it's within the expected range
+        abs_velocity = max(min(abs_velocity, self.V_max), self.V_min)
 
         # Apply the mapping formula
-        duty_cycle = self.MIN_DUTY_CYCLE + ((velocity - self.V_min) / (self.V_max - self.V_min)) * (100 - self.MIN_DUTY_CYCLE)
+        duty_cycle = self.MIN_DUTY_CYCLE + ((abs_velocity - self.V_min) / (self.V_max - self.V_min)) * (100 - self.MIN_DUTY_CYCLE)
+
         return duty_cycle
+
+    def _calculate_wheel_speeds(self, linear_velocity, angular_velocity):
+        """
+        Calculate wheel speeds based on linear and angular velocity.
+        """
+        left_wheel_speed = linear_velocity - (angular_velocity * self.wheel_width / 2)
+        right_wheel_speed = linear_velocity + (angular_velocity * self.wheel_width / 2)
+
+        if self.debug:   
+            print(f"Left wheel speed: {left_wheel_speed}, Right wheel speed: {right_wheel_speed}")
+
+        return left_wheel_speed, right_wheel_speed
+
+    def _set_motor_direction(self, linear_velocity):
+        """
+        Set the direction for both motors based on the sign of linear_velocity.
+        """
+        if linear_velocity >= 0:  # Forward
+            GPIO.output(self.IN1, GPIO.HIGH)
+            GPIO.output(self.IN2, GPIO.LOW)
+            GPIO.output(self.IN3, GPIO.HIGH)
+            GPIO.output(self.IN4, GPIO.LOW)
+            if self.debug:
+                print("Moving forward")
+        else:  # Backward
+            GPIO.output(self.IN1, GPIO.LOW)
+            GPIO.output(self.IN2, GPIO.HIGH)
+            GPIO.output(self.IN3, GPIO.LOW)
+            GPIO.output(self.IN4, GPIO.HIGH)
+            if self.debug:
+                print("Moving backward")
 
     def move(self, linear_velocity, angular_velocity):
         """
@@ -81,16 +116,11 @@ class MotorDriver:
         :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
         :param angular_velocity: Desired angular velocity of the robot (rad/s).
         """
-        # print parameter inputs for debugging and width of the wheelbase
         if self.debug:
             print(f"Linear velocity: {linear_velocity}, Angular velocity: {angular_velocity}, Wheel width: {self.wheel_width}")
 
-        # Calculate wheel velocities based on linear and angular velocity
-        left_wheel_speed = linear_velocity - (angular_velocity * self.wheel_width / 2)
-        right_wheel_speed = linear_velocity + (angular_velocity * self.wheel_width / 2)
-        # if debug is true, print the wheel speeds
-        if self.debug:   
-            print(f"Left wheel speed: {left_wheel_speed}, Right wheel speed: {right_wheel_speed}")
+        # Calculate wheel velocities
+        left_wheel_speed, right_wheel_speed = self._calculate_wheel_speeds(linear_velocity, angular_velocity)
 
         # Map wheel velocities to PWM duty cycles
         duty_cycle_l = self.map_velocity_to_duty_cycle(left_wheel_speed)
@@ -98,7 +128,6 @@ class MotorDriver:
         # Print duty cycles if debug is True
         if self.debug:
             print(f"Left duty cycle: {duty_cycle_l:.2f}, Right duty cycle: {duty_cycle_r:.2f}")
-            # print direction of turn depending on the relative duty cycles
             if duty_cycle_l > duty_cycle_r:
                 print("Turning left")
             elif duty_cycle_r > duty_cycle_l:
@@ -106,21 +135,8 @@ class MotorDriver:
             else:
                 print("Moving straight")    
 
-        # Set the direction for both motors based on the sign of set_speed
-        if linear_velocity >= 0:  # Forward
-            GPIO.output(self.IN1, GPIO.HIGH)
-            GPIO.output(self.IN2, GPIO.LOW)
-            GPIO.output(self.IN3, GPIO.HIGH)
-            GPIO.output(self.IN4, GPIO.LOW)
-            if self.debug:
-                print("Moving forward")
-        else:  # Backward
-            GPIO.output(self.IN1, GPIO.LOW)
-            GPIO.output(self.IN2, GPIO.HIGH)
-            GPIO.output(self.IN3, GPIO.LOW)
-            GPIO.output(self.IN4, GPIO.HIGH)
-            if self.debug:
-                print("Moving backward")
+        # Set motor direction
+        self._set_motor_direction(linear_velocity)
 
         # Apply the calculated duty cycles to PWM
         self.pwmA.ChangeDutyCycle(abs(duty_cycle_l))
@@ -216,11 +232,11 @@ class MotorDriver:
         self.stop()
 
 # Test the MotorDriver class
-# from motor_diff import MotorDriver
-# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
-# motor._timed_move(1, 3, 1)
-# motor._variable_move([1, 2, 5], [1, 2, 5])
-# motor.cleanup()
+from motor_diff import MotorDriver
+motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
+motor._timed_move(1, 3, 1)
+motor._variable_move([1, 2, 5], [1, 2, 5])
+motor.cleanup()
 
 
 if __name__ == "__main__":
