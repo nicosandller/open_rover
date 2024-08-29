@@ -177,7 +177,7 @@ class MotorDriver:
 
     def spin(self, angular_velocity):
         """
-        Spin the rover in place based on angular velocity.
+        Spin the rover in place based on turn velocity assuming a circle with diameter of the wheelbase.
         
         :param angular_velocity: Desired angular velocity in rad/s. Positive values spin left, negative values spin right.
         """
@@ -190,9 +190,9 @@ class MotorDriver:
         if self.debug:
             print(f"Spinning {direction}")
 
-        # Calculate wheel speed and duty cycle
-        base_speed = abs(angular_velocity)
-        wheel_speed = base_speed * self.wheel_width
+        # calculate the speed of both wheels turning in opposite directions to achieve the angular velocity
+        wheel_speed = angular_velocity * self.wheel_width / 2
+        # convert to duty cycle    
         duty_cycle = self.map_velocity_to_duty_cycle(wheel_speed)
         
         if self.debug:
