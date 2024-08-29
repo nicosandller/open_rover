@@ -5,8 +5,9 @@ class MotorDriver:
     """
     DC motor driver with L298N chip using differential drive principles.
 
-
-    :param wheel_base_width: distance from wheel to wheel in centimeters).
+    :param wheel_base_width: Distance between wheels in meters.
+    :param pwm_freq: PWM frequency in Hz. Default is 1000.
+    :param debug: Enable debug output. Default is False.
     """
     def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin, wheel_base_width, pwm_freq=1000, debug=False):
         # Motor A (Left)
@@ -54,9 +55,9 @@ class MotorDriver:
 
     def map_velocity_to_duty_cycle(self, velocity):
         """
-        Maps the linear velocity to a PWM duty cycle.
+        Maps linear velocity to PWM duty cycle.
         
-        :param velocity: Desired linear velocity of the robot (in m/s).
+        :param velocity: Desired linear velocity in m/s.
         :return: Mapped duty cycle (45-100).
         """
         # Use absolute value of velocity for mapping
@@ -72,14 +73,11 @@ class MotorDriver:
 
     def _calculate_wheel_speeds(self, linear_velocity, angular_velocity):
         """
-        Calculate wheel speeds based on linear and angular velocity. 
-        
-        When the angular velocity is positive, the robot will turn left. 
-        When the angular velocity is negative, the robot will turn right.
+        Calculate wheel speeds based on linear and angular velocity.
 
-        :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
-        :param angular_velocity: Desired angular velocity of the robot (rad/s).
-        :return: Left and right wheel speeds (in m/s).
+        :param linear_velocity: Desired linear velocity of the robot's center in m/s.
+        :param angular_velocity: Desired angular velocity of the robot in rad/s.
+        :return: Left and right wheel speeds in m/s.
         """
         left_wheel_speed = linear_velocity - (angular_velocity * self.wheel_width / 2)
         right_wheel_speed = linear_velocity + (angular_velocity * self.wheel_width / 2)
@@ -110,18 +108,18 @@ class MotorDriver:
 
     def move(self, linear_velocity, angular_velocity):
         """
-        Move the robot based on desired linear and angular velocities using differential drive.
+        Move the robot based on desired linear and angular velocities.
 
         Example: 
-        A robot with a linear velocity of  1 {m/s}  and an angular velocity of  0.5 {rad/s}.
-        - Turning radius  R :
+                A robot with a linear velocity of  1 {m/s}  and an angular velocity of  0.5 {rad/s}.
+                - Turning radius  R :
 
-            R = 1/0.5 = 2
+                    R = 1/0.5 = 2
 
-        --> The robot will follow a circular path with a radius of 2 meters. The larger the radius, the gentler the turn. A smaller radius means a sharper turn.
-        
-        :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
-        :param angular_velocity: Desired angular velocity of the robot (rad/s).
+                --> The robot will follow a circular path with a radius of 2 meters. The larger the radius, the gentler the turn. A smaller radius means a sharper turn.
+
+        :param linear_velocity: Desired linear velocity of the robot's center in m/s.
+        :param angular_velocity: Desired angular velocity of the robot in rad/s.
         """
         if self.debug:
             print(f"Linear velocity: {linear_velocity}, Angular velocity: {angular_velocity}, Wheel width: {self.wheel_width}")
@@ -177,9 +175,9 @@ class MotorDriver:
 
     def spin(self, angular_velocity):
         """
-        Spin the rover in place based on turn velocity assuming a circle with diameter of the wheelbase.
+        Spin the rover in place based on angular velocity.
         
-        :param angular_velocity: Desired angular velocity in rad/s. Positive values spin left, negative values spin right.
+        :param angular_velocity: Desired angular velocity in rad/s. Positive for left, negative for right.
         """
         if self.debug:
             print(f"Spinning with angular velocity: {angular_velocity}")
@@ -225,11 +223,11 @@ class MotorDriver:
 
     def _timed_move(self, linear_velocity, angular_velocity, seconds):
         """
-        Move the robot for a specified number of seconds.
+        Move the robot for a specified duration.
         
-        :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
-        :param angular_velocity: Desired angular velocity of the robot (rad/s).
-        :param seconds: Number of seconds to move the robot.
+        :param linear_velocity: Desired linear velocity of the robot's center in m/s.
+        :param angular_velocity: Desired angular velocity of the robot in rad/s.
+        :param seconds: Duration of movement in seconds.
         """
         # loopelocities and moves the robot at 0.2 second intervals with each set of velocities
         self.move(linear_velocity=linear_velocity, angular_velocity=angular_velocity)
@@ -240,8 +238,8 @@ class MotorDriver:
         """
         Move the robot with variable velocities and angular velocities.
         
-        :param velocities: List of linear velocities.
-        :param angular_velocities: List of angular velocities.
+        :param velocities: List of linear velocities in m/s.
+        :param angular_velocities: List of angular velocities in rad/s.
         """
         for i in range(len(velocities)):
             self.move(linear_velocity=velocities[i], angular_velocity=angular_velocities[i])
