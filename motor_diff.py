@@ -81,6 +81,10 @@ class MotorDriver:
         :param linear_velocity: Desired linear velocity of the robot's center (in m/s).
         :param angular_velocity: Desired angular velocity of the robot (rad/s).
         """
+        # print parameter inputs for debugging and width of the wheelbase
+        if self.debug:
+            print(f"Linear velocity: {linear_velocity}, Angular velocity: {angular_velocity}, Wheel width: {self.wheel_width}")
+
         # Calculate wheel velocities based on linear and angular velocity
         left_wheel_speed = linear_velocity - (angular_velocity * self.wheel_width / 2)
         right_wheel_speed = linear_velocity + (angular_velocity * self.wheel_width / 2)
@@ -94,28 +98,29 @@ class MotorDriver:
         # Print duty cycles if debug is True
         if self.debug:
             print(f"Left duty cycle: {duty_cycle_l:.2f}, Right duty cycle: {duty_cycle_r:.2f}")
+            # print direction of turn depending on the relative duty cycles
+            if duty_cycle_l > duty_cycle_r:
+                print("Turning left")
+            elif duty_cycle_r > duty_cycle_l:
+                print("Turning right")
+            else:
+                print("Moving straight")    
 
-        # Set motor direction based on the sign of the velocities
-        if left_wheel_speed >= 0:
+        # Set the direction for both motors based on the sign of set_speed
+        if linear_velocity >= 0:  # Forward
             GPIO.output(self.IN1, GPIO.HIGH)
             GPIO.output(self.IN2, GPIO.LOW)
-        else:
-            GPIO.output(self.IN1, GPIO.LOW)
-            GPIO.output(self.IN2, GPIO.HIGH)
-
-        if right_wheel_speed >= 0:
             GPIO.output(self.IN3, GPIO.HIGH)
             GPIO.output(self.IN4, GPIO.LOW)
-        else:
+            if self.debug:
+                print("Moving forward")
+        else:  # Backward
+            GPIO.output(self.IN1, GPIO.LOW)
+            GPIO.output(self.IN2, GPIO.HIGH)
             GPIO.output(self.IN3, GPIO.LOW)
             GPIO.output(self.IN4, GPIO.HIGH)
-
-        # print direction of turn if debug is true
-        if self.debug:
-            if left_wheel_speed >= 0:
-                print("Turning left")
-            else:
-                print("Turning right")
+            if self.debug:
+                print("Moving backward")
 
         # Apply the calculated duty cycles to PWM
         self.pwmA.ChangeDutyCycle(abs(duty_cycle_l))
@@ -173,12 +178,11 @@ class MotorDriver:
         :param angular_velocity: Desired angular velocity of the robot (rad/s).
         :param seconds: Number of seconds to move the robot.
         """
-        # loop
+        # loopelocities and moves the robot at 0.2 second intervals with each set of velocities
         self.move(linear_velocity=linear_velocity, angular_velocity=angular_velocity)
         time.sleep(seconds)
         self.stop()
 
-    # create a new internal method that takes an array of velocities and angular velocities and moves the robot at 0.2 second intervals with each set of velocities
     def _variable_move(self, velocities, angular_velocities):
         """
         Move the robot with variable velocities and angular velocities.
@@ -195,10 +199,11 @@ class MotorDriver:
         self.stop()
 
 # Test the MotorDriver class
-# from motor_diff import MotorDriver
-#motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=0.5, debug=True)
-# motor._timed_move(1, 3, 1)
-# motor._variable_move([1, 2, 3, 4], [1, 2, 3, 4])
+from motor_diff import MotorDriver
+motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
+motor._timed_move(1, 3, 1)
+motor._variable_move([1, 2, 5], [1, 2, 5])
+motor.cleanup()
 
 
 if __name__ == "__main__":
