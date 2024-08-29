@@ -139,8 +139,8 @@ class MotorDriver:
         self._set_motor_direction(linear_velocity)
 
         # Apply the calculated duty cycles to PWM
-        self.pwmA.ChangeDutyCycle(abs(duty_cycle_l))
-        self.pwmB.ChangeDutyCycle(abs(duty_cycle_r))
+        self.pwmA.ChangeDutyCycle(abs(duty_cycle_r))
+        self.pwmB.ChangeDutyCycle(abs(duty_cycle_l))
 
     def spin(self, angular_velocity):
         """
