@@ -30,24 +30,28 @@ class MotorDriver:
         self.V_min = v_min  # Minimum effective linear velocity in m/s
         self.debug = debug
         
+        self._setup_motors(pwm_freq)
+        
+    def _setup_motors(self, pwm_freq):
+        """
+        Setup the motors with the specified PWM frequency.
+        """
         GPIO.setmode(GPIO.BCM)
         
-        # Setup Motor A
-        GPIO.setup(self.IN1, GPIO.OUT)
-        GPIO.setup(self.IN2, GPIO.OUT)
-        GPIO.setup(self.ENA, GPIO.OUT)
+        # Setup Motor A in a loop
+        for pin in [self.IN1, self.IN2, self.ENA]:
+            GPIO.setup(pin, GPIO.OUT)
         
-        # Setup Motor B
-        GPIO.setup(self.IN3, GPIO.OUT)
-        GPIO.setup(self.IN4, GPIO.OUT)
-        GPIO.setup(self.ENB, GPIO.OUT)
+        # Setup Motor B in a loop
+        for pin in [self.IN3, self.IN4, self.ENB]:
+            GPIO.setup(pin, GPIO.OUT)
         
         # Initialize PWM for both motors
         self.pwmA = GPIO.PWM(self.ENA, pwm_freq)
         self.pwmB = GPIO.PWM(self.ENB, pwm_freq)
         self.pwmA.start(0)
         self.pwmB.start(0)
-
+            
     def map_velocity_to_duty_cycle(self, velocity):
         """
         Maps linear velocity to PWM duty cycle.
