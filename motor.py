@@ -9,7 +9,7 @@ class MotorDriver:
     :param pwm_freq: PWM frequency in Hz. Default is 1000.
     :param debug: Enable debug output. Default is False.
     """
-    def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin, wheel_base_width, pwm_freq=1000, debug=False):
+    def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin, wheel_base_width, min_duty_cycle, v_max, v_min, pwm_freq=1000, debug=False):
         # Motor A (Left)
         self.IN1 = in1_pin
         self.IN2 = in2_pin
@@ -19,6 +19,16 @@ class MotorDriver:
         self.IN3 = in3_pin
         self.IN4 = in4_pin
         self.ENB = enb_pin
+
+        # Minimum speed threshold
+        self.MIN_DUTY_CYCLE = min_duty_cycle  # Minimum duty cycle for effective motor operation
+        # Wheelbase width for differential drive calculations transformed to meters
+        self.wheel_width = (wheel_base_width / 100)
+
+        # Define max and min velocity for mapping
+        self.V_max = v_max  # Maximum linear velocity in m/s
+        self.V_min = v_min  # Minimum effective linear velocity in m/s
+        self.debug = debug
         
         GPIO.setmode(GPIO.BCM)
         
@@ -37,21 +47,6 @@ class MotorDriver:
         self.pwmB = GPIO.PWM(self.ENB, pwm_freq)
         self.pwmA.start(0)
         self.pwmB.start(0)
-
-        # Current speed tracking
-        self.current_speed_right = 0
-        self.current_speed_left = 0
-
-        # Minimum speed threshold
-        self.MIN_DUTY_CYCLE = 45  # Minimum duty cycle for effective motor operation
-
-        # Wheelbase width for differential drive calculations transformed to meters
-        self.wheel_width = (wheel_base_width / 100)
-
-        # Define max and min velocity for mapping
-        self.V_max = 3.14  # Maximum linear velocity in m/s
-        self.V_min = 0.31  # Minimum effective linear velocity in m/s
-        self.debug = debug
 
     def map_velocity_to_duty_cycle(self, velocity):
         """
@@ -210,8 +205,6 @@ class MotorDriver:
         GPIO.output(self.IN4, GPIO.LOW)
         self.pwmA.ChangeDutyCycle(0)
         self.pwmB.ChangeDutyCycle(0)
-        self.current_speed_right = 0
-        self.current_speed_left = 0
 
     def cleanup(self):
         """
@@ -221,7 +214,7 @@ class MotorDriver:
         self.pwmB.stop()
         GPIO.cleanup()
 
-    def _timed_move(self, linear_velocity, angular_velocity, seconds):
+    def _timed_move(self, linear_velocity, angular_velocity, seconds=0.5):
         """
         Move the robot for a specified duration.
         
@@ -229,28 +222,38 @@ class MotorDriver:
         :param angular_velocity: Desired angular velocity of the robot in rad/s.
         :param seconds: Duration of movement in seconds.
         """
-        # loopelocities and moves the robot at 0.2 second intervals with each set of velocities
         self.move(linear_velocity=linear_velocity, angular_velocity=angular_velocity)
         time.sleep(seconds)
         self.stop()
 
-    def _variable_move(self, velocities, angular_velocities):
+    def _variable_move(self, velocities, angular_velocities, spacing=0.2):
         """
         Move the robot with variable velocities and angular velocities.
         
         :param velocities: List of linear velocities in m/s.
         :param angular_velocities: List of angular velocities in rad/s.
+        :param spacing: Time spacing between each movement in seconds. Default is 0.2 seconds.
         """
         for i in range(len(velocities)):
             self.move(linear_velocity=velocities[i], angular_velocity=angular_velocities[i])
-            time.sleep(0.2)
+            time.sleep(spacing)
             if self.debug:
                 print(f"Moving with velocities: {velocities[i]} and angular velocities: {angular_velocities[i]}")
 
         self.stop()
 
 if __name__ == "__main__":
-    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
+    motor = MotorDriver(
+        in1_pin=24, 
+        in2_pin=23, 
+        ena_pin=12, 
+        in3_pin=22, 
+        in4_pin=27, 
+        enb_pin=13, 
+        wheel_base_width=22,
+        min_duty_cycle=45, 
+        v_max=3.14, v_min=0.31, debug=True
+    )
 
     print("starting motor tests...")
     time.sleep(3)
@@ -294,3 +297,10 @@ if __name__ == "__main__":
         pass
     finally:
         motor.cleanup()
+
+# from motor_diff import MotorDriver
+# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
+# motor._timed_move(1, 3, 0.5)
+# motor._variable_move([1, 2, 5], [1, 2, 5])
+# motor.spin(1)
+# motor.cleanup()
