@@ -272,28 +272,30 @@ if __name__ == "__main__":
         time.sleep(2)
 
         print("Test 3: Move forward with left turn")
-        motor._timed_move(linear_velocity=1, angular_velocity=3, seconds=1)
+        motor._timed_move(linear_velocity=1, angular_velocity=5, seconds=1)
         time.sleep(2)
 
         print("Test 4: Move backwards back in place turning left")
-        motor._timed_move(linear_velocity=-1, angular_velocity=-3, seconds=1)
+        motor._timed_move(linear_velocity=-1, angular_velocity=-5, seconds=1)
         time.sleep(2)
 
         print("Test 5: Move forward with right turn")
-        motor._timed_move(linear_velocity=1, angular_velocity=-3, seconds=1)
+        motor._timed_move(linear_velocity=1, angular_velocity=-5, seconds=1)
         time.sleep(2)
 
         print("Test 6: Move backwards back in place turning right")
-        motor._timed_move(linear_velocity=-1, angular_velocity=3, seconds=1)
+        motor._timed_move(linear_velocity=-1, angular_velocity=5, seconds=1)
         time.sleep(2)
 
         print("Test 7: Spin left")
         motor.spin(angular_velocity=-7)
         time.sleep(2)
+        motor.stop()
 
         print("Test 8: Spin right")
         motor.spin(angular_velocity=7)
         time.sleep(2)
+        motor.stop()
 
         print("Finished tests!")
         
@@ -302,9 +304,9 @@ if __name__ == "__main__":
     finally:
         motor.cleanup()
 
-# from motor_diff import MotorDriver
-# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, debug=True)
-# motor._timed_move(1, 3, 0.5)
+# from motor import MotorDriver
+# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22,min_duty_cycle=45, v_max=3.14, v_min=0.31, debug=True)
+# motor._timed_move(1, 0, 0.5)
 # motor._variable_move([1, 2, 5], [1, 2, 5])
 # motor.spin(1)
 # motor.cleanup()
