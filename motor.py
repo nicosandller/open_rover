@@ -32,6 +32,16 @@ class MotorDriver:
         
         self._setup_motors(pwm_freq)
         
+    @property
+    def V_max(self):
+        """Get the maximum linear velocity."""
+        return self.V_max
+
+    @property
+    def V_min(self):
+        """Get the minimum effective linear velocity."""
+        return self.V_min
+
     def _setup_motors(self, pwm_freq):
         """
         Setup the motors with the specified PWM frequency.
