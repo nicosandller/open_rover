@@ -30,8 +30,8 @@ class RoverWebServer:
             forward_backwards, left_rigth = coordinates
             print(f"Joystick moved: forwards / backwards {forward_backwards}%, left / right {left_rigth}%")
             # handle the joystick movement based on the coordinates
-            v_max = self.motor_driver.V_max
-            v_min = self.motor_driver.V_min
+            v_max = self.motor_driver.return_v_max()
+            v_min = self.motor_driver.return_v_min()
             forward_velocity = (forward_backwards / 100) * v_max
             if 0 < forward_velocity < v_min:
                 forward_velocity = v_min
