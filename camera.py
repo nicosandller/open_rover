@@ -45,23 +45,23 @@ class CameraHandler:
 
         buffer = b''
         while True:
-            chunk = self.process.stdout.read(4096)  # Read larger chunks for efficiency
+            chunk = self.process.stdout.read(1024)
             if not chunk:
                 print("No more data from libcamera-vid.")
                 break
             buffer += chunk
-
-            # Look for the start and end of a JPEG frame
-            start = buffer.find(b'\xff\xd8')  # JPEG start of image marker
             end = buffer.find(b'\xff\xd9')  # JPEG end of image marker
 
-            if start != -1 and end != -1:
-                frame = buffer[start:end+2]
+            if end != -1:
+                frame = buffer[:end+2]
                 buffer = buffer[end+2:]
-                return frame
+                # decode image
+                decoded_frame = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
+                if decoded_frame is not None:
+                    return decoded_frame
 
             # Check if buffer is too large and reset if necessary
-            if len(buffer) > 2_000_000:  # Increase buffer size limit if needed
+            if len(buffer) > 1_000_000:
                 print("Buffer size exceeded limit, resetting buffer.")
                 buffer = b''
 
@@ -74,8 +74,7 @@ class CameraHandler:
         ret, frame = self.cap.read()
         if ret:
             resized_frame = cv2.resize(frame, (self.width, self.height))
-            _, jpeg = cv2.imencode('.jpg', resized_frame)
-            return jpeg.tobytes()  # Return the JPEG byte array
+            return resized_frame
         else:
             print("Failed to capture image from macOS camera.")
             return None

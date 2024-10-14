@@ -1,3 +1,4 @@
+import cv2
 import time
 from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
@@ -62,8 +63,11 @@ class RoverWebServer:
         while True:
             frame = self.camera_handler.get_still()
             if frame is not None:
+                # Re-encode the modified image back to JPEG format
+                _, jpeg_frame = cv2.imencode('.jpg', frame)
+                modified_jpeg_frame = jpeg_frame.tobytes()
                 yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                    b'Content-Type: image/jpeg\r\n\r\n' + modified_jpeg_frame + b'\r\n')
             else:
                 print("Warning: No frame received from camera handler.")
                 time.sleep(0.1)  # Prevent a tight loop if no frames are received
