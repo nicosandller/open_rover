@@ -45,11 +45,13 @@ class CameraHandler:
 
         buffer = b''
         while True:
-            chunk = self.process.stdout.read(1024)
+            chunk = self.process.stdout.read(4096)  # Read larger chunks for efficiency
             if not chunk:
                 print("No more data from libcamera-vid.")
                 break
             buffer += chunk
+
+            # Look for the start and end of a JPEG frame
             start = buffer.find(b'\xff\xd8')  # JPEG start of image marker
             end = buffer.find(b'\xff\xd9')  # JPEG end of image marker
 
@@ -59,7 +61,7 @@ class CameraHandler:
                 return frame
 
             # Check if buffer is too large and reset if necessary
-            if len(buffer) > 1_000_000:
+            if len(buffer) > 2_000_000:  # Increase buffer size limit if needed
                 print("Buffer size exceeded limit, resetting buffer.")
                 buffer = b''
 

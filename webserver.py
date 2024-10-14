@@ -59,11 +59,8 @@ class RoverWebServer:
             # Add logic to start/stop the live stream if needed
 
     def generate_frames(self):
-        n=True
         while True:
-            if n:
-                frame = self.camera_handler.get_still()
-                n =False
+            frame = self.camera_handler.get_still()
             if frame is not None:
                 yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
