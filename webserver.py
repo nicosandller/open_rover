@@ -55,7 +55,7 @@ class RoverWebServer:
             self.stream_on = data.get('status', False)
             print(f"Stream toggled: {'On' if self.stream_on else 'Off'}")
             # Emit the updated stream state to all clients
-            self.socketio.emit('stream_state', {'status': self.stream_on})
+            # self.socketio.emit('stream_state', {'status': self.stream_on})
             # Add logic to start/stop the live stream if needed
 
     def generate_frames(self):

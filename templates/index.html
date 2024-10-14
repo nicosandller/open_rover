@@ -156,10 +156,11 @@
             }
         });
 
-        // function toggleStream() {
-        //     const isChecked = document.getElementById('streamToggle').checked;
-        //     socket.emit('toggle_stream', { status: isChecked });
-        // }
+        function toggleStream() {
+            const isChecked = document.getElementById('streamToggle').checked;
+            console.log(`Stream toggle requested: ${isChecked ? 'On' : 'Off'}`);
+            socket.emit('toggle_stream', { status: isChecked });
+        }
 
         function initJoystick() {
             const joystick = document.querySelector('.joystick');
