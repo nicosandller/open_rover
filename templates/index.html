@@ -117,6 +117,18 @@
     <script>
         const socket = io();
 
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket server');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from WebSocket server');
+        });
+
         // Listen for the stream_state event from the server
         socket.on('stream_state', function(data) {
             const streamStatus = data.status;
