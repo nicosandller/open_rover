@@ -55,10 +55,8 @@ class CameraHandler:
             if end != -1:
                 frame = buffer[:end+2]
                 buffer = buffer[end+2:]
-                # decode image
-                decoded_frame = cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR)
-                if decoded_frame is not None:
-                    return decoded_frame
+                # Directly return the JPEG byte array
+                return frame
 
             # Check if buffer is too large and reset if necessary
             if len(buffer) > 1_000_000:
