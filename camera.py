@@ -50,12 +50,12 @@ class CameraHandler:
                 print("No more data from libcamera-vid.")
                 break
             buffer += chunk
+            start = buffer.find(b'\xff\xd8')  # JPEG start of image marker
             end = buffer.find(b'\xff\xd9')  # JPEG end of image marker
 
-            if end != -1:
-                frame = buffer[:end+2]
+            if start != -1 and end != -1:
+                frame = buffer[start:end+2]
                 buffer = buffer[end+2:]
-                # Directly return the JPEG byte array
                 return frame
 
             # Check if buffer is too large and reset if necessary
