@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rover Control Interface</title>
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .control-panel {
+            width: 30%;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center elements vertically */
+            align-items: center; /* Center elements horizontally */
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            justify-content: center; /* Center elements horizontally */
+        }
+        .control-item label {
+            margin-right: 10px;
+        }
+        .stream-box {
+            width: 70%;
+            height: 80%; /* Use 80% of the height */
+            margin: auto 0; /* Center vertically with equal top and bottom margins */
+            background-color: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            user-select: none; /* Prevents text selection */
+        }
+        .joystick-container {
+            width: 150px;
+            height: 150px;
+            background-color: #999999;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px; /* Ensure joystick is below AI dialogue */
+            position: relative; /* Ensure joystick is positioned correctly */
+        }
+        .joystick {
+            width: 50px;
+            height: 50px;
+            background-color: #f30b0b;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+        }
+        .slider {
+            position: relative;
+            width: 60px;
+            height: 34px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: flex-start; /* Align toggles to the start */
+        }
+        .slider input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider .slider-track {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider .slider-thumb {
+            position: absolute;
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-track {
+            background-color: #2196F3;
+        }
+        input:checked + .slider-track .slider-thumb {
+            transform: translateX(26px);
+        }
+        .ai-dialogue {
+            width: 100%;
+            height: 50%;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            margin-bottom: 10px; /* Ensure joystick is below AI dialogue */
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        // Listen for the stream_state event from the server
+        socket.on('stream_state', function(data) {
+            const streamStatus = data.status;
+            const streamToggle = document.getElementById('streamToggle');
+            streamToggle.checked = streamStatus; // Update the toggle state
+
+            const stream = document.getElementById('stream');
+            if (streamStatus) {
+                // Start displaying the video feed
+                if (!stream.querySelector('img')) {
+                    const video = document.createElement('img');
+                    video.src = '/video_feed';
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    stream.appendChild(video);
+                }
+                // Remove the "Stream is off" message if present
+                const offMessage = stream.querySelector('.stream-off-message');
+                if (offMessage) {
+                    stream.removeChild(offMessage);
+                }
+            } else {
+                // Stop displaying the video feed
+                const video = stream.querySelector('img');
+                if (video) {
+                    stream.removeChild(video);
+                }
+                // Show the "Stream is off" message
+                if (!stream.querySelector('.stream-off-message')) {
+                    const message = document.createElement('div');
+                    message.className = 'stream-off-message';
+                    message.textContent = 'Stream is off';
+                    stream.appendChild(message);
+                }
+            }
+        });
+
+        function toggleStream() {
+            const isChecked = document.getElementById('streamToggle').checked;
+            socket.emit('toggle_stream', { status: isChecked });
+        }
+
+        function initJoystick() {
+            const joystick = document.querySelector('.joystick');
+            const container = document.querySelector('.joystick-container');
+            const centerX = container.offsetWidth / 2;
+            const centerY = container.offsetHeight / 2;
+
+            joystick.style.left = `${centerX - joystick.offsetWidth / 2}px`;
+            joystick.style.top = `${centerY - joystick.offsetHeight / 2}px`;
+
+            let isDragging = false;
+
+            joystick.addEventListener('mousedown', function() {
+                isDragging = true;
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    joystick.style.left = `${centerX - joystick.offsetWidth / 2}px`;
+                    joystick.style.top = `${centerY - joystick.offsetHeight / 2}px`;
+                    socket.emit('joystick_move', { coordinates: [0, 0] });
+                }
+            });
+
+            document.addEventListener('mousemove', function(event) {
+                if (isDragging) {
+                    const rect = container.getBoundingClientRect();
+                    const x = event.clientX - rect.left - centerX;
+                    const y = event.clientY - rect.top - centerY;
+                    const distance = Math.min(Math.sqrt(x * x + y * y), centerX - joystick.offsetWidth / 2);
+
+                    joystick.style.left = `${centerX + distance * (x / Math.sqrt(x * x + y * y)) - joystick.offsetWidth / 2}px`;
+                    joystick.style.top = `${centerY + distance * (y / Math.sqrt(x * x + y * y)) - joystick.offsetHeight / 2}px`;
+
+                    let forward = Math.round((y / centerY) * -100);
+                    let right = Math.round((x / centerX) * 100);
+
+                    // Cap the values between -100 and 100
+                    forward = Math.max(-100, Math.min(100, forward));
+                    right = Math.max(-100, Math.min(100, right));
+
+                    socket.emit('joystick_move', { coordinates: [forward, right] });
+                }
+            });
+        }
+
+        window.onload = function() {
+            initJoystick();
+        };
+    </script>
+</head>
+<body>
+    <div class="control-panel">
+        <div class="control-item">
+            <label for="streamToggle">Video Stream</label>
+            <label class="slider">
+                <input type="checkbox" id="streamToggle" onclick="toggleStream()">
+                <span class="slider-track">
+                    <span class="slider-thumb"></span>
+                </span>
+            </label>
+        </div>
+        <div class="control-item">
+            <label for="explorerToggle">Explorer Mode</label>
+            <label class="slider">
+                <input type="checkbox" id="explorerToggle" onclick="toggleExplorerMode()">
+                <span class="slider-track">
+                    <span class="slider-thumb"></span>
+                </span>
+            </label>
+        </div>
+        <div class="ai-dialogue" id="aiDialogue">
+            <!-- AI instructions and comments will be displayed here -->
+        </div>
+        <div class="joystick-container">
+            <div class="joystick"></div>
+        </div>
+    </div>
+    <div class="stream-box" id="stream" style="user-select: none;">
+        <!-- Video stream will be displayed here -->
+    </div>
+</body>
+</html>
