@@ -69,7 +69,7 @@ class RoverWebServer:
                 time.sleep(0.1)  # Prevent a tight loop if no frames are received
 
     def start(self):
-        self.socketio.run(self.app, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
+        self.socketio.run(self.app, host='0.0.0.0', port=5001)#, allow_unsafe_werkzeug=True)
 
 # The following code is for standalone execution and can be removed if not needed
 if __name__ == '__main__':
