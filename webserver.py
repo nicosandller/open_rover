@@ -58,15 +58,15 @@ class RoverWebServer:
             self.socketio.emit('stream_state', {'status': self.stream_on})
             # Add logic to start/stop the live stream if needed
 
-def generate_frames(self):
-    while True:
-        frame = self.camera_handler.get_still()
-        if frame is not None:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        else:
-            print("Warning: No frame received from camera handler.")
-            time.sleep(0.1)  # Prevent a tight loop if no frames are received
+    def generate_frames(self):
+        while True:
+            frame = self.camera_handler.get_still()
+            if frame is not None:
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            else:
+                print("Warning: No frame received from camera handler.")
+                time.sleep(0.1)  # Prevent a tight loop if no frames are received
 
     def start(self):
         self.socketio.run(self.app, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)

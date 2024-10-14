@@ -74,7 +74,8 @@ class CameraHandler:
         ret, frame = self.cap.read()
         if ret:
             resized_frame = cv2.resize(frame, (self.width, self.height))
-            return resized_frame
+            _, jpeg = cv2.imencode('.jpg', resized_frame)
+            return jpeg.tobytes()  # Return the JPEG byte array
         else:
             print("Failed to capture image from macOS camera.")
             return None

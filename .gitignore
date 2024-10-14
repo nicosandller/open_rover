@@ -162,7 +162,7 @@ cython_debug/
 #.idea/
 
 .DS_store
-secrets.py
+secret.py
 *.eim
 *.jpg
 test_images
