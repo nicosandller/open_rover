@@ -132,11 +132,13 @@
                     video.style.width = '100%';
                     video.style.height = '100%';
                     stream.appendChild(video);
+                    console.log("Video element created and appended.");
                 }
                 // Remove the "Stream is off" message if present
                 const offMessage = stream.querySelector('.stream-off-message');
                 if (offMessage) {
                     stream.removeChild(offMessage);
+                    console.log("Video element removed.");
                 }
             } else {
                 // Stop displaying the video feed
