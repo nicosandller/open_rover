@@ -121,6 +121,7 @@
         socket.on('stream_state', function(data) {
             const streamStatus = data.status;
             const streamToggle = document.getElementById('streamToggle');
+            console.log(`Stream state called.`);
             streamToggle.checked = streamStatus; // Update the toggle state
 
             const stream = document.getElementById('stream');
@@ -145,6 +146,7 @@
                 const video = stream.querySelector('img');
                 if (video) {
                     stream.removeChild(video);
+                    console.log("Video element removed.");
                 }
                 // Show the "Stream is off" message
                 if (!stream.querySelector('.stream-off-message')) {
@@ -152,6 +154,7 @@
                     message.className = 'stream-off-message';
                     message.textContent = 'Stream is off';
                     stream.appendChild(message);
+                    console.log("Stream-off message added.");
                 }
             }
         });
