@@ -1,5 +1,5 @@
 import time
-import eventlet
+# import eventlet
 from flask import Flask, render_template, Response
 from flask_socketio import SocketIO
 
@@ -70,7 +70,7 @@ class RoverWebServer:
                 time.sleep(0.1)  # Prevent a tight loop if no frames are received
 
     def start(self):
-        eventlet.monkey_patch()  # Ensure compatibility with eventlet
+        # eventlet.monkey_patch()  # Ensure compatibility with eventlet
         self.socketio.run(self.app, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
 
 # The following code is for standalone execution and can be removed if not needed
