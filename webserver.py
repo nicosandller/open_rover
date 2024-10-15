@@ -10,6 +10,7 @@ class RoverWebServer:
         self.camera_handler = camera_handler
         self.motor_driver = motor_driver
         self.stream_on = False  # Default stream state is off
+        self.motors_on = True   # Default stream state is on
         self._setup_routes()
 
     def _setup_routes(self):
@@ -27,23 +28,27 @@ class RoverWebServer:
         @self.socketio.on('joystick_move')
         def handle_joystick_move(data):
             coordinates = data.get('coordinates', (0, 0))
-            forward_backwards, left_rigth = coordinates
-            print(f"Joystick moved: forwards / backwards {forward_backwards}%, left / right {left_rigth}%")
-            # handle the joystick movement based on the coordinates
+            forward, left_rigth = coordinates
+            print(f"JOYSTICK: forward {forward}%, left / right {left_rigth}%")
+            # transform joystic % to m/s. Truncate to 50% of max velocity
             v_max = self.motor_driver.return_v_max()
-            v_min = self.motor_driver.return_v_min()
-            forward_velocity = (forward_backwards / 100) * v_max
-            if 0 < forward_velocity < v_min:
-                forward_velocity = v_min
-            elif 0 > forward_velocity > -v_min:
-                forward_velocity = -v_min
-            angular_velocity = (left_rigth / 100) * 5  
-            self.motor_driver.move(forward_velocity, angular_velocity)
+            forward_velocity = (forward / 100) * v_max * 0.5
+            print(f"forw / back in m/s: {forward_velocity}")
+            # v_min = self.motor_driver.return_v_min()
+            # if 0 < forward_velocity < v_min:
+            #     forward_velocity = v_min
+            # elif 0 > forward_velocity > -v_min:
+            #     forward_velocity = -v_min
+            # angular_velocity = (left_rigth / 100) * 5  
+    
+            if self.motors_on:
+                self.motor_driver.move(forward_velocity, 0)
 
         @self.socketio.on('connect')
         def handle_connect():
             # Emit the current stream state to the client upon connection or refresh
             self.socketio.emit('stream_state', {'status': self.stream_on})
+            self.socketio.emit('motors_state', {'status': self.motors_on})
 
         @self.socketio.on('toggle_stream')
         def handle_toggle_stream(data):
@@ -53,12 +58,13 @@ class RoverWebServer:
             # Emit the updated stream state to all clients
             self.socketio.emit('stream_state', {'status': self.stream_on})
 
-        @self.socketio.on('toggle_explorer')
+        @self.socketio.on('toggle_motor')
         def handle_toggle_explorer(data):
             # handles explorer mode toggle slider button
             status = data.get('status', False)
-            print(f"Explorer mode toggled: {'On' if status else 'Off'}")
-            # Add logic to enable/disable explorer mode
+            print(f"Motors toggled: {'On' if status else 'Off'}")
+            # Emit the updated stream state to all clients
+            self.socketio.emit('motors_state', {'status': self.motors_on})
 
     def generate_frames(self):
         while True:

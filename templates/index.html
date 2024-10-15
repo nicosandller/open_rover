@@ -177,6 +177,12 @@
             socket.emit('toggle_stream', { status: isChecked });
         }
 
+        function toggleMotors() {
+            const isChecked = document.getElementById('motorsToggle').checked;
+            console.log(`Motors toggle requested: ${isChecked ? 'On' : 'Off'}`);
+            socket.emit('toggle_motors', { status: isChecked });
+        }
+
         function initJoystick() {
             const joystick = document.querySelector('.joystick');
             const container = document.querySelector('.joystick-container');
@@ -240,9 +246,9 @@
             </label>
         </div>
         <div class="control-item">
-            <label for="explorerToggle">Explorer Mode</label>
+            <label for="explorerToggle">Motors</label>
             <label class="slider">
-                <input type="checkbox" id="explorerToggle" onclick="toggleExplorerMode()">
+                <input type="checkbox" id="motorsToggle" onclick="toggleExplorerMode()">
                 <span class="slider-track">
                     <span class="slider-thumb"></span>
                 </span>
