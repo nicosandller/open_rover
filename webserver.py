@@ -33,16 +33,13 @@ class RoverWebServer:
             # transform joystic % to m/s. Truncate to 50% of max velocity
             v_max = self.motor_driver.return_v_max()
             forward_velocity = (forward / 100) * v_max * 0.5
-            print(f"forw / back in m/s: {forward_velocity}")
-            # v_min = self.motor_driver.return_v_min()
-            # if 0 < forward_velocity < v_min:
-            #     forward_velocity = v_min
-            # elif 0 > forward_velocity > -v_min:
-            #     forward_velocity = -v_min
-            # angular_velocity = (left_rigth / 100) * 5  
+            print(f"forw / back in m/s: {forward_velocity}") 
     
             if self.motors_on:
-                self.motor_driver.move(forward_velocity, 0)
+                if forward_velocity==0:
+                    self.motor_driver.stop()
+                else:
+                    self.motor_driver.move(forward_velocity, 0)
 
         @self.socketio.on('connect')
         def handle_connect():
