@@ -58,7 +58,7 @@ class RoverWebServer:
             # Emit the updated stream state to all clients
             self.socketio.emit('stream_state', {'status': self.stream_on})
 
-        @self.socketio.on('toggle_motor')
+        @self.socketio.on('toggle_motors')
         def handle_toggle_explorer(data):
             # handles explorer mode toggle slider button
             status = data.get('status', False)

@@ -171,6 +171,14 @@
             }
         });
 
+        // Listen for the motors_state event from the server
+        socket.on('motors_state', function(data) {
+            const motorsStatus = data.status;
+            const motorsToggle = document.getElementById('motorsToggle');
+            console.log(`Motors state called.`);
+            motorsToggle.checked = motorsStatus; // Update the toggle state
+        });
+
         function toggleStream() {
             const isChecked = document.getElementById('streamToggle').checked;
             console.log(`Stream toggle requested: ${isChecked ? 'On' : 'Off'}`);

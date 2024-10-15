@@ -313,7 +313,7 @@ if __name__ == "__main__":
         motor.cleanup()
 
 # from motor import MotorDriver
-# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22,min_duty_cycle=45, v_max=3.14, v_min=0.31, debug=True)
+# motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22,min_duty_cycle=30, v_max=3.14, v_min=0.31, debug=True)
 # motor._timed_move(1, 0, 0.5)
 # motor._variable_move([1, 2, 5], [1, 2, 5])
 # motor.spin(1)
