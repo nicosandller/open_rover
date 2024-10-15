@@ -40,24 +40,25 @@ class RoverWebServer:
             angular_velocity = (left_rigth / 100) * 5  
             self.motor_driver.move(forward_velocity, angular_velocity)
 
-        @self.socketio.on('toggle_explorer')
-        def handle_toggle_explorer(data):
-            status = data.get('status', False)
-            print(f"Explorer mode toggled: {'On' if status else 'Off'}")
-            # Add logic to enable/disable explorer mode
-
         @self.socketio.on('connect')
         def handle_connect():
-            # Emit the current stream state to the client upon connection
+            # Emit the current stream state to the client upon connection or refresh
             self.socketio.emit('stream_state', {'status': self.stream_on})
 
         @self.socketio.on('toggle_stream')
         def handle_toggle_stream(data):
+            # handles streaming toggle slider button
             self.stream_on = data.get('status', False)
             print(f"Stream toggled: {'On' if self.stream_on else 'Off'}")
             # Emit the updated stream state to all clients
             self.socketio.emit('stream_state', {'status': self.stream_on})
-            # Add logic to start/stop the live stream if needed
+
+        @self.socketio.on('toggle_explorer')
+        def handle_toggle_explorer(data):
+            # handles explorer mode toggle slider button
+            status = data.get('status', False)
+            print(f"Explorer mode toggled: {'On' if status else 'Off'}")
+            # Add logic to enable/disable explorer mode
 
     def generate_frames(self):
         while True:
