@@ -133,7 +133,7 @@
         socket.on('stream_state', function(data) {
             const streamStatus = data.status;
             const streamToggle = document.getElementById('streamToggle');
-            console.log(`Stream state called.`);
+            console.log(`Stream state called. Current status: ${streamStatus ? 'On' : 'Off'}`);
             streamToggle.checked = streamStatus; // Update the toggle state
 
             const stream = document.getElementById('stream');
@@ -175,7 +175,7 @@
         socket.on('motors_state', function(data) {
             const motorsStatus = data.status;
             const motorsToggle = document.getElementById('motorsToggle');
-            console.log(`Motors state called.`);
+            console.log(`Motors state called. Current status: ${motorsStatus ? 'On' : 'Off'}`);
             motorsToggle.checked = motorsStatus; // Update the toggle state
         });
 
