@@ -48,7 +48,7 @@ class RoverController:
 
 
 if __name__ == "__main__":
-    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, min_duty_cycle=45, v_max=3.14, v_min=0.31, debug=True)
+    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13, wheel_base_width=22, min_duty_cycle=30, v_max=3.14, v_min=0.10, debug=True)
     camera = CameraHandler(width=960, height=540, fps=30)
     rover = RoverController(motor, camera)
     rover.run()
