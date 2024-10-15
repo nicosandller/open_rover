@@ -38,8 +38,9 @@ class RoverController:
         print("Initialization complete.")
         print("Starting webserver...")
         # Start the web server in a separate process
-        web_server_process = multiprocessing.Process(target=self.web_server.start)
-        web_server_process.start()
+        # web_server_process = multiprocessing.Process(target=self.web_server.start)
+        # web_server_process.start()
+        self.web_server.start()
         print("Web server started. Access the rover's control interface via the web browser on http://raspberrypi.local:5001")
 
     def run(self):
