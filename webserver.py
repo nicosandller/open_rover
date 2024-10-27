@@ -29,6 +29,10 @@ class RoverWebServer:
         def handle_joystick_move(data):
             coordinates = data.get('coordinates', (0, 0))
             forward, right = coordinates
+            # if either of the coordinates is less than 15% then set it to zero
+            forward = 0 if forward <= 15 else forward
+            right = 0 if right <= 15 else right
+        
             print(f"JOYSTICK: forward {forward}%, right {right}%")
             # transform joystic % to m/s. Truncate to x% of max velocity
             v_max = self.motor_driver.return_v_max()
