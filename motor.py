@@ -49,17 +49,17 @@ class MotorDriver:
         Set the direction for both motors based on the sign of linear_velocity.
         """
         if forward_percentage > 0:  # Forward
-            GPIO.output(self.IN1, GPIO.HIGH)
-            GPIO.output(self.IN2, GPIO.LOW)
-            GPIO.output(self.IN3, GPIO.HIGH)
-            GPIO.output(self.IN4, GPIO.LOW)
+            GPIO.output(self.in1, GPIO.HIGH)
+            GPIO.output(self.in2, GPIO.LOW)
+            GPIO.output(self.in3, GPIO.HIGH)
+            GPIO.output(self.in4, GPIO.LOW)
             if self.debug:
                 print("Moving forward")
         else:  # Backward
-            GPIO.output(self.IN1, GPIO.LOW)
-            GPIO.output(self.IN2, GPIO.HIGH)
-            GPIO.output(self.IN3, GPIO.LOW)
-            GPIO.output(self.IN4, GPIO.HIGH)
+            GPIO.output(self.in1, GPIO.LOW)
+            GPIO.output(self.in2, GPIO.HIGH)
+            GPIO.output(self.in3, GPIO.LOW)
+            GPIO.output(self.in4, GPIO.HIGH)
             if self.debug:
                 print("Moving backward")
 
@@ -142,6 +142,7 @@ class MotorDriver:
         GPIO.cleanup()
 
 if __name__ == "__main__":
+    from motor import MotorDrive
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
 
     print("Test 1: Move forward 50%")
