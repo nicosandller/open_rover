@@ -77,7 +77,7 @@ class MotorDriver:
             return 0
         return min(int(self.MIN_DUTY_CYCLE + (speed / 100) * (100 - self.MIN_DUTY_CYCLE)), self.MAX_DUTY_CYCLE)
 
-    def move(self, forward, right):
+    def move(self, forward_percentage, right_percentage):
         """
         Moves the rover based on forward and right values.
         
@@ -92,8 +92,8 @@ class MotorDriver:
         - The rover should move forward at 50% speed, with a 50% differential.
         """
         # Ensure inputs are within range. This is just for safety.
-        forward_percentage = max(-100, min(100, forward))
-        right_percentage = max(-1, min(1, right))
+        forward_percentage = max(-100, min(100, forward_percentage))
+        right_percentage = max(-1, min(1, right_percentage))
 
         print(f"Raw | forward motor speed percentage: {forward_percentage}, right percentage: {right_percentage}")
 
@@ -101,10 +101,10 @@ class MotorDriver:
 
         # if right_percentage positive and forward positive then turn right Same backwards (forward negative)
         if right_percentage >= 0: 
-            right_motor_speed = forward - (forward_percentage * right_percentage)
+            right_motor_speed = forward_percentage - (forward_percentage * right_percentage)
             left_motor_speed = forward_percentage
         else:
-            left_motor_speed = forward - (forward_percentage * right_percentage)
+            left_motor_speed = forward_percentage - (forward_percentage * right_percentage)
             right_motor_speed = forward_percentage
 
         print(f"Adjusted | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
@@ -142,6 +142,7 @@ class MotorDriver:
 if __name__ == "__main__":
     # from motor import MotorDriver
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
+    motor.stop()
 
     print("Test 1: Move forward 50%")
     motor.move(50, 0)  # Move forward at 50% speed
