@@ -140,7 +140,7 @@ class MotorDriver:
         GPIO.cleanup()
 
 if __name__ == "__main__":
-    from motor import MotorDrive
+    # from motor import MotorDriver
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
 
     print("Test 1: Move forward 50%")
