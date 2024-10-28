@@ -46,22 +46,20 @@ class MotorDriver:
 
     def _set_motor_direction(self, forward_percentage):
         """
-        Set the direction for both motors based on the sign of linear_velocity.
+        Set the direction for both motors based on the sign of forward_percentage.
         """
         if forward_percentage > 0:  # Forward
             GPIO.output(self.in1, GPIO.HIGH)
             GPIO.output(self.in2, GPIO.LOW)
             GPIO.output(self.in3, GPIO.HIGH)
             GPIO.output(self.in4, GPIO.LOW)
-            if self.debug:
-                print("Moving forward")
+            print("Moving forward")
         else:  # Backward
             GPIO.output(self.in1, GPIO.LOW)
             GPIO.output(self.in2, GPIO.HIGH)
             GPIO.output(self.in3, GPIO.LOW)
             GPIO.output(self.in4, GPIO.HIGH)
-            if self.debug:
-                print("Moving backward")
+            print("Moving backward")
 
         return abs(forward_percentage)
 
