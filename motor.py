@@ -97,7 +97,7 @@ class MotorDriver:
         forward_percentage = max(-100, min(100, forward))
         right_percentage = max(-1, min(1, right))
 
-        print(f"Raw | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
+        print(f"Raw | forward motor speed percentage: {forward_percentage}, right percentage: {right_percentage}")
 
         forward_percentage = self._set_motor_direction(forward_percentage)
 
