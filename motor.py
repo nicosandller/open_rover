@@ -19,12 +19,12 @@ class MotorDriver:
         - The duty cycle (0-100) controls the motor speed, where 0 is stop and 100 is full speed.
         - The input voltage of the battery affects the overall motor performance. Ensure the voltage is compatible with the motor specifications.
         """
-        # Motor A (Left)
+        # Motor A (right)
         self.in1 = in1_pin
         self.in2 = in2_pin
         self.enA = ena_pin
         
-        # Motor B (Right)
+        # Motor B (Left)
         self.in3 = in3_pin
         self.in4 = in4_pin
         self.enB = enb_pin
@@ -117,8 +117,8 @@ class MotorDriver:
         print(f"Remapped | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
 
         # Apply the calculated duty cycles to PWM
-        self.pwmA.ChangeDutyCycle(left_motor_speed)
-        self.pwmB.ChangeDutyCycle(right_motor_speed)
+        self.pwmB.ChangeDutyCycle(left_motor_speed)
+        self.pwmA.ChangeDutyCycle(right_motor_speed)
 
     def stop(self):
         """
