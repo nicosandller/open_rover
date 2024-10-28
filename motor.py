@@ -102,10 +102,10 @@ class MotorDriver:
         # if right_percentage positive and forward positive then turn right Same backwards (forward negative)
         if right_percentage >= 0: 
             right_motor_speed = forward_percentage - (forward_percentage * right_percentage)
-            left_motor_speed = forward_percentage
+            left_motor_speed = forward_percentage + (forward_percentage * right_percentage)
         else:
             left_motor_speed = forward_percentage - (forward_percentage * right_percentage)
-            right_motor_speed = forward_percentage
+            right_motor_speed = forward_percentage + (forward_percentage * right_percentage)
 
         print(f"Adjusted | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
 
@@ -117,8 +117,8 @@ class MotorDriver:
         print(f"Remapped | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
 
         # Apply the calculated duty cycles to PWM
-        self.pwmA.ChangeDutyCycle(abs(left_motor_speed))
-        self.pwmB.ChangeDutyCycle(abs(right_motor_speed))
+        self.pwmA.ChangeDutyCycle(left_motor_speed)
+        self.pwmB.ChangeDutyCycle(right_motor_speed)
 
     def stop(self):
         """
