@@ -44,6 +44,27 @@ class MotorDriver:
         self.pwmA.start(0)
         self.pwmB.start(0)
 
+    def _set_motor_direction(self, forward_percentage):
+        """
+        Set the direction for both motors based on the sign of linear_velocity.
+        """
+        if forward_percentage > 0:  # Forward
+            GPIO.output(self.IN1, GPIO.HIGH)
+            GPIO.output(self.IN2, GPIO.LOW)
+            GPIO.output(self.IN3, GPIO.HIGH)
+            GPIO.output(self.IN4, GPIO.LOW)
+            if self.debug:
+                print("Moving forward")
+        else:  # Backward
+            GPIO.output(self.IN1, GPIO.LOW)
+            GPIO.output(self.IN2, GPIO.HIGH)
+            GPIO.output(self.IN3, GPIO.LOW)
+            GPIO.output(self.IN4, GPIO.HIGH)
+            if self.debug:
+                print("Moving backward")
+
+        return abs(forward_percentage)
+
     def remap_speed(self, speed):
         """
         Remaps the speed value to be within the range of min_duty_cycle to 100.
@@ -64,72 +85,42 @@ class MotorDriver:
         
         Parameters:
         forward (int): Forward movement value (-100 to 100). Negative values mean backward movement.
-        right (int): Right movement value (-100 to 100). Negative values mean left movement.
+        right (int): Right movement value (-1 to 1). Negative values mean left movement.
         
         The method calculates the speed and direction for both motors to achieve the desired movement.
         
         Example:
-        If forward=50 and right=25:
-        - The rover should move forward, with a slight right turn.
+        If forward=50 and right=0.5:
+        - The rover should move forward at 50% speed, with a 50% differential.
         """
         # Ensure inputs are within range. This is just for safety.
-        forward = max(-100, min(100, forward))
-        right = max(-100, min(100, right))
+        forward_percentage = max(-100, min(100, forward))
+        right_percentage = max(-1, min(1, right))
 
-        # Calculate motor speeds based on forward and right values
-        # Forward contributes equally to both motors, while right/left adjusts the relative speed
-        left_motor_speed = forward + right
-        right_motor_speed = forward - right
+        print(f"Raw | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
 
-        # Print intermediate values for debugging
-        print(f"Raw left motor speed: {left_motor_speed}, Raw right motor speed: {right_motor_speed}")
+        forward_percentage = self._set_motor_direction(forward_percentage)
 
-        # Normalize motor speeds to be within 0 to 100
-        max_speed = max(abs(left_motor_speed), abs(right_motor_speed), 100)
-        left_motor_speed = int((left_motor_speed / max_speed) * 100)
-        right_motor_speed = int((right_motor_speed / max_speed) * 100)
+        # if right_percentage positive and forward positive then turn right Same backwards (forward negative)
+        if right_percentage >= 0: 
+            right_motor_speed = forward - (forward_percentage * right_percentage)
+            left_motor_speed = forward_percentage
+        else:
+            left_motor_speed = forward - (forward_percentage * right_percentage)
+            right_motor_speed = forward_percentage
+
+        print(f"Adjusted | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
 
         # Remap speeds to ensure they meet the minimum duty cycle requirements
         left_motor_speed = self.remap_speed(left_motor_speed)
         right_motor_speed = self.remap_speed(right_motor_speed)
 
         # Print normalized values for debugging
-        print(f"Remapped left motor speed: {left_motor_speed}, Remapped right motor speed: {right_motor_speed}")
+        print(f"Remapped | left motor speed: {left_motor_speed}, right motor speed: {right_motor_speed}")
 
-        # Set directions and speeds for both motors
-        if left_motor_speed >= 0:
-            self.set_motor_a(left_motor_speed, 1)
-        else:
-            self.set_motor_a(abs(left_motor_speed), 0)
-
-        if right_motor_speed >= 0:
-            self.set_motor_b(right_motor_speed, 1)
-        else:
-            self.set_motor_b(abs(right_motor_speed), 0)
-
-    def set_motor_a(self, speed, direction):
-        """
-        Sets Motor A speed and direction.
-        
-        Parameters:
-        speed (int): Speed of the motor (0-100, as duty cycle percentage).
-        direction (int): Direction of the motor (1 for forward, 0 for backward).
-        """
-        GPIO.output(self.in1, GPIO.HIGH if direction == 1 else GPIO.LOW)
-        GPIO.output(self.in2, GPIO.LOW if direction == 1 else GPIO.HIGH)
-        self.pwmA.ChangeDutyCycle(speed)
-
-    def set_motor_b(self, speed, direction):
-        """
-        Sets Motor B speed and direction.
-        
-        Parameters:
-        speed (int): Speed of the motor (0-100, as duty cycle percentage).
-        direction (int): Direction of the motor (1 for forward, 0 for backward).
-        """
-        GPIO.output(self.in3, GPIO.HIGH if direction == 1 else GPIO.LOW)
-        GPIO.output(self.in4, GPIO.LOW if direction == 1 else GPIO.HIGH)
-        self.pwmB.ChangeDutyCycle(speed)
+        # Apply the calculated duty cycles to PWM
+        self.pwmA.ChangeDutyCycle(abs(left_motor_speed))
+        self.pwmB.ChangeDutyCycle(abs(right_motor_speed))
 
     def stop(self):
         """
