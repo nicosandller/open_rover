@@ -33,6 +33,27 @@ Open Rover is a project designed to control a rover using a web interface. The r
      ```
 
 4. **Running the Rover**:
+   - SSH into your Raspberry Pi:
+     ```bash
+     ssh pi@raspberrypi.local
+     ```
+   - Clone the repository and navigate to the project directory:
+     ```bash
+     git clone https://github.com/your_username/open_rover.git
+     cd open_rover
+     ```
+   - Create a virtual environment:
+     ```bash
+     python3 -m venv venv
+     ```
+   - Activate the virtual environment:
+     ```bash
+     source venv/bin/activate
+     ```
+   - Install the required packages:
+     ```bash
+     pip install -r requirements.txt
+     ```
    - Execute the `rover.py` script to start the system:
      ```bash
      python rover.py
