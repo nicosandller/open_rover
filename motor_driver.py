@@ -49,7 +49,7 @@ class MotorDriver:
         forward_abs = self._set_motor_direction(forward)
 
         # if turning right
-        if rigthward > 0:
+        if rigthward >= 0:
             left_motor_power = forward_abs
             right_motor_power = forward_abs - rigthward
 
