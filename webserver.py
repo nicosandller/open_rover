@@ -78,10 +78,3 @@ class RoverWebServer:
 
     def start(self):
         self.socketio.run(self.app, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
-
-# The following code is for standalone execution and can be removed if not needed
-if __name__ == '__main__':
-    from camera import CameraHandler
-    camera = CameraHandler(width=960, height=540, fps=30)
-    server = RoverWebServer(None, camera)
-    server.start()

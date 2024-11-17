@@ -1,9 +1,22 @@
 import cv2
 import numpy as np
-from edge_impulse_linux.runner import ImpulseRunner
+from edge_impulse_linux.image import ImageImpulseRunner
 import sys
 import subprocess
 import os
+
+# Classification result example
+# {
+#     'result': {
+#         'bounding_boxes': [
+#             {'height': 8, 'label': 'cat_face', 'value': 0.6261171698570251, 'width': 8, 'x': 216, 'y': 112},
+#             {'height': 8, 'label': 'cat_face', 'value': 0.5320437550544739, 'width': 8, 'x': 104, 'y': 168},
+#             {'height': 8, 'label': 'cat_face', 'value': 0.6040768623352051, 'width': 8, 'x': 136, 'y': 224}]
+#     },
+#         'timing': {
+#             'anomaly': 0, 'classification': 69, 'dsp': 6, 'json': 36, 'stdin': 7559
+#     }
+# }
 
 # Ensure the model path is provided
 if len(sys.argv) < 2:
@@ -103,3 +116,32 @@ except Exception as e:
 finally:
     if runner:
         runner.stop()
+
+
+
+
+
+#upload test
+api_key = "ei_b477850776c8f4d55ee927f2ade414c0d9fbb58f15b45cbf"
+import cv2
+import numpy as np
+from utils import upload_image_to_edge_impulse
+from old_files.config import project_id
+
+# Load the image from a file
+image_path = '/home/nico/camera_streamer/debug_cropped.jpg'
+
+# Open the image file and convert it to a NumPy array
+image = cv2.imread(image_path)
+
+bounding_boxes =  {
+    'bounding_boxes': [
+            {'height': 8, 'label': 'cat_face', 'value': 0.6261171698570251, 'width': 8, 'x': 216, 'y': 112},
+        ]
+}
+
+# Call the function with the loaded image
+upload_image_to_edge_impulse(image, api_key, bounding_boxes)
+
+
+
