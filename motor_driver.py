@@ -24,11 +24,11 @@ class MotorDriver:
         self.pwm_right.start(0)
         self.pwm_left.start(0)
 
-    def _set_motor_direction(self, forward_percentage):
+    def _set_motor_direction(self, forward):
         """
-        Set the direction for both motors based on the sign of forward_percentage.
+        Set the direction for both motors based on the sign of forward.
         """
-        if forward_percentage > 0:  # Forward
+        if forward > 0:  # Forward
             GPIO.output(self.in1, GPIO.HIGH)
             GPIO.output(self.in2, GPIO.LOW)
             GPIO.output(self.in3, GPIO.HIGH)
@@ -41,7 +41,7 @@ class MotorDriver:
             GPIO.output(self.in4, GPIO.HIGH)
             print("Moving backward")
 
-        return abs(forward_percentage)
+        return abs(forward)
 
     def move(self, forward, rigthward):
         # depending on the sign configure the motors to move in one direction
@@ -50,12 +50,20 @@ class MotorDriver:
 
         # if turning right
         if rigthward >= 0:
+            # limit rigthward to not be > forward_abs
+            rigthward = min(forward_abs, rigthward)
+            # set left motor to max set forward power
             left_motor_power = forward_abs
+            # set right motor to max set forward power - rightward power
             right_motor_power = forward_abs - rigthward
 
         # if turning left
         if rigthward < 0:
+            # limit rigthward to not be > forward_abs
+            rigthward = (-1) * min(forward_abs, abs(rigthward))
+            # set rigth motor to max set forward power
             right_motor_power = forward_abs
+            # set left motor to max set forward power + (-) rightward power
             left_motor_power = forward_abs + rigthward
 
         # Apply the calculated duty cycles to PWM
