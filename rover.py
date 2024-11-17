@@ -17,7 +17,7 @@ Explorer mode allows the rover to autonomously navigate and search for cats with
 
 import time
 # import requests
-import multiprocessing
+# import multiprocessing
 
 
 from motor import MotorDriver

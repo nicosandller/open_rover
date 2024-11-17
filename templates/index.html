@@ -209,9 +209,11 @@
             document.addEventListener('mouseup', function() {
                 if (isDragging) {
                     isDragging = false;
-                    joystick.style.left = `${centerX - joystick.offsetWidth / 2}px`;
-                    joystick.style.top = `${centerY - joystick.offsetHeight / 2}px`;
-                    socket.emit('joystick_move', { coordinates: [0, 0] });
+                    setTimeout(() => {
+                        joystick.style.left = `${centerX - joystick.offsetWidth / 2}px`;
+                        joystick.style.top = `${centerY - joystick.offsetHeight / 2}px`;
+                        socket.emit('joystick_move', { coordinates: [0, 0] });
+                    }, 50); // Add a 50ms delay
                 }
             });
 
