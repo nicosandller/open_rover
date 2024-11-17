@@ -1,5 +1,14 @@
-import RPi.GPIO as GPIO
+"""
+
+Example: 
+from motor_driver import MotorDriver
+motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
+
+"""
+
 import time
+import RPi.GPIO as GPIO
+
 
 class MotorDriver:
     def __init__(self, in1_pin, in2_pin, ena_pin, in3_pin, in4_pin, enb_pin):
