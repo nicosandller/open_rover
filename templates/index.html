@@ -43,8 +43,8 @@
             user-select: none; /* Prevents text selection */
         }
         .joystick-container {
-            width: 150px;
-            height: 150px;
+            width: 200px; /* Increased width */
+            height: 200px; /* Increased height */
             background-color: #999999;
             border-radius: 50%;
             display: flex;
@@ -213,7 +213,7 @@
                         joystick.style.left = `${centerX - joystick.offsetWidth / 2}px`;
                         joystick.style.top = `${centerY - joystick.offsetHeight / 2}px`;
                         socket.emit('joystick_move', { coordinates: [0, 0] });
-                    }, 50); // Add a 50ms delay
+                    }, 150); // Add a 150ms delay
                 }
             });
 
