@@ -66,14 +66,14 @@ class MotorDriver:
         """
         Stops both motors.
         """
-        self.pwmA.ChangeDutyCycle(0)
-        self.pwmB.ChangeDutyCycle(0)
+        self.pwm_right.ChangeDutyCycle(0)
+        self.pwm_left.ChangeDutyCycle(0)
 
     def cleanup(self):
         """
         Cleanup GPIO and PWM resources.
         """
-        self.pwmA.stop()
-        self.pwmB.stop()
+        self.pwm_right.stop()
+        self.pwm_left.stop()
         GPIO.cleanup()
 
