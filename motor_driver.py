@@ -43,32 +43,34 @@ class MotorDriver:
 
         return abs(forward)
 
-    def move(self, forward, rigthward):
+    def move(self, forward, rightward):
         # depending on the sign configure the motors to move in one direction
         # the sign of "forward" doesn't matter for right left calculations.
         forward_abs = self._set_motor_direction(forward)
+        print(f"Initial | forward: {forward}, rightward: {rightward}, forward_abs: {forward_abs}")
 
         # if turning right
-        if rigthward >= 0:
-            # limit rigthward to not be > forward_abs
-            rigthward = min(forward_abs, rigthward)
+        if rightward >= 0:
+            # limit rightward to not be > forward_abs
+            rightward = min(forward_abs, rightward)
             # set left motor to max set forward power
             left_motor_power = forward_abs
             # set right motor to max set forward power - rightward power
-            right_motor_power = forward_abs - rigthward
+            right_motor_power = forward_abs - rightward
 
         # if turning left
-        if rigthward < 0:
-            # limit rigthward to not be > forward_abs
-            rigthward = (-1) * min(forward_abs, abs(rigthward))
-            # set rigth motor to max set forward power
+        if rightward < 0:
+            # limit rightward to not be > forward_abs
+            rightward = (-1) * min(forward_abs, abs(rightward))
+            # set right motor to max set forward power
             right_motor_power = forward_abs
             # set left motor to max set forward power + (-) rightward power
-            left_motor_power = forward_abs + rigthward
+            left_motor_power = forward_abs + rightward
 
         # Apply the calculated duty cycles to PWM
         self.pwm_right.ChangeDutyCycle(right_motor_power)
         self.pwm_left.ChangeDutyCycle(left_motor_power)
+        print(f"Applied | right_motor_power: {right_motor_power}, left_motor_power: {left_motor_power}")
 
     def stop(self):
         """
