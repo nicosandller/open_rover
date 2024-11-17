@@ -28,24 +28,18 @@ class RoverWebServer:
         @self.socketio.on('joystick_move')
         def handle_joystick_move(data):
             coordinates = data.get('coordinates', (0, 0))
-            forward, right = coordinates
+            forward, rightward = coordinates
             # if either of the coordinates is less than 15% then set it to zero
-            forward = 0 if forward <= 15 else forward
-            right = 0 if right <= 15 else right
+            forward = 0 if -20 <= forward <= 20 else forward
+            rightward = 0 if -15 <= rightward <= 15 else rightward
         
-            print(f"JOYSTICK: forward {forward}%, right {right}%")
-            # transform joystic % to m/s. Truncate to x% of max velocity
-            v_max = self.motor_driver.return_v_max()
-            forward_velocity = (forward / 100) * v_max * 0.3
-            # motor driver + angular velocity is a turn to left so we need to reverse it
-            angular_velocity =  (right / 100) * 5 * (-1)
-            print(f"forw / right in m/s: {forward_velocity} / {angular_velocity}") 
+            print(f"JOYSTICK: forward {forward}%, rightward {rightward}%")
     
             if self.motors_on:
-                if (forward_velocity==0) & (angular_velocity==0):
+                if (forward==0):
                     self.motor_driver.stop()
                 else:
-                    self.motor_driver.move(forward_velocity, angular_velocity)
+                    self.motor_driver.move(forward, rightward)
 
         @self.socketio.on('connect')
         def handle_connect():
