@@ -1,17 +1,29 @@
 import cv2
 import time
-from flask import Flask, render_template, Response
+import RPi.GPIO as GPIO
 from flask_socketio import SocketIO
+from flask import Flask, render_template, Response
+
+
+from motor import MotorDriver
+from camera import CameraHandler
 
 class RoverWebServer:
-    def __init__(self, motor_driver, camera_handler):
+    def __init__(self, motor_driver, camera_handler, led_pin=25):
         self.app = Flask(__name__)
         self.socketio = SocketIO(self.app)
         self.camera_handler = camera_handler
         self.motor_driver = motor_driver
-        self.stream_on = False  # Default stream state is off
-        self.motors_on = True   # Default stream state is on
+        # Default states
+        self.stream_on = False
+        self.motors_on = True  
+        self.lights_on = False 
         self._setup_routes()
+
+        # setup rover lights pin as output
+        self.led_pin = led_pin
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(led_pin, GPIO.OUT)
 
     def _setup_routes(self):
         @self.app.route('/')
@@ -46,6 +58,7 @@ class RoverWebServer:
             # Emit the current stream state to the client upon connection or refresh
             self.socketio.emit('stream_state', {'status': self.stream_on})
             self.socketio.emit('motors_state', {'status': self.motors_on})
+            self.socketio.emit('light_state', {'status': self.lights_on})
 
         @self.socketio.on('toggle_stream')
         def handle_toggle_stream(data):
@@ -56,12 +69,27 @@ class RoverWebServer:
             self.socketio.emit('stream_state', {'status': self.stream_on})
 
         @self.socketio.on('toggle_motors')
-        def handle_toggle_explorer(data):
-            # handles explorer mode toggle slider button
+        def handle_toggle_motors(data):
+            # handles motor toggle slider button
             self.motors_on = data.get('status', False)
             print(f"Motors toggled: {'On' if self.motors_on else 'Off'}")
             # Emit the updated stream state to all clients
             self.socketio.emit('motors_state', {'status': self.motors_on})
+
+        @self.socketio.on('toggle_lights')
+        def handle_toggle_lights(data):
+            # handles light toggle slider button
+            self.lights_on = data.get('status', False)
+            print(f"Light toggled: {'On' if self.lights_on else 'Off'}")
+            # Emit the updated stream state to all clients
+            self.socketio.emit('light_state', {'status': self.lights_on})
+            
+            # Change the pin state
+            if self.lights_on:
+                GPIO.output(self.led_pin, GPIO.HIGH)
+            else:
+                GPIO.output(self.led_pin, GPIO.LOW)
+
 
     def generate_frames(self):
         while True:
@@ -78,3 +106,21 @@ class RoverWebServer:
 
     def start(self):
         self.socketio.run(self.app, host='0.0.0.0', port=5001, allow_unsafe_werkzeug=True)
+
+
+if __name__ == "__main__":
+    motor_driver = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
+    camera_driver = CameraHandler(width=960, height=540, fps=30)
+
+    web_server = RoverWebServer(motor_driver, camera_driver, 25)
+
+    print("Initializing system...")
+    # TODO: Add any necessary initialization logic here
+    time.sleep(2)
+
+    print("Initialization complete. Starting webserver...")
+    # Start the web server in a separate process
+    # web_server_process = multiprocessing.Process(target=self.web_server.start)
+    # web_server_process.start()
+    web_server.start()
+    print("Web server started. Access the rover's control interface via the web browser on http://raspberrypi.local:5001")

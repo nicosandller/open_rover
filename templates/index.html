@@ -171,12 +171,18 @@
             }
         });
 
-        // Listen for the motors_state event from the server
         socket.on('motors_state', function(data) {
             const motorsStatus = data.status;
             const motorsToggle = document.getElementById('motorsToggle');
             console.log(`Motors state called. Current status: ${motorsStatus ? 'On' : 'Off'}`);
             motorsToggle.checked = motorsStatus; // Update the toggle state
+        });
+
+        socket.on('light_state', function(data) {
+            const lightsStatus = data.status;
+            const lightsToggle = document.getElementById('lightsToggle');
+            console.log(`lights state called. Current status: ${lightsStatus ? 'On' : 'Off'}`);
+            lightsToggle.checked = lightsStatus; // Update the toggle state
         });
 
         function toggleStream() {
@@ -189,6 +195,12 @@
             const isChecked = document.getElementById('motorsToggle').checked;
             console.log(`Motors toggle requested: ${isChecked ? 'On' : 'Off'}`);
             socket.emit('toggle_motors', { status: isChecked });
+        }
+
+        function toggleLights() {
+            const isChecked = document.getElementById('lightsToggle').checked;
+            console.log(`Lights toggle requested: ${isChecked ? 'On' : 'Off'}`);
+            socket.emit('toggle_lights', { status: isChecked });
         }
 
         function initJoystick() {
@@ -259,6 +271,15 @@
             <label for="explorerToggle">Motors</label>
             <label class="slider">
                 <input type="checkbox" id="motorsToggle" onclick="toggleMotors()">
+                <span class="slider-track">
+                    <span class="slider-thumb"></span>
+                </span>
+            </label>
+        </div>
+        <div class="control-item"></div>
+            <label for="lightsToggle">Lights</label>
+            <label class="slider">
+                <input type="checkbox" id="lightsToggle" onclick="toggleLights()">
                 <span class="slider-track">
                     <span class="slider-thumb"></span>
                 </span>
