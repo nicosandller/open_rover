@@ -31,8 +31,8 @@
         }
         .stream-box {
             width: 70%;
-            height: 80%; /* Use 80% of the height */
-            margin: auto 0; /* Center vertically with equal top and bottom margins */
+            height: 100%; /* Changed to 100% to fill the remaining space */
+            margin: 0; /* Removed auto margins to prevent centering */
             background-color: #000;
             position: relative;
             display: flex;
@@ -268,7 +268,7 @@
             </label>
         </div>
         <div class="control-item">
-            <label for="explorerToggle">Motors</label>
+            <label for="motorsToggle">Motors</label>
             <label class="slider">
                 <input type="checkbox" id="motorsToggle" onclick="toggleMotors()">
                 <span class="slider-track">
@@ -276,7 +276,7 @@
                 </span>
             </label>
         </div>
-        <div class="control-item"></div>
+        <div class="control-item">
             <label for="lightsToggle">Lights</label>
             <label class="slider">
                 <input type="checkbox" id="lightsToggle" onclick="toggleLights()">
