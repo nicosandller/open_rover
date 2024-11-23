@@ -77,3 +77,56 @@ Open Rover is a project designed to control a rover using a web interface. The r
 - Check the console logs for any connection errors or warnings.
 
 For further assistance, refer to the source code and comments within the files for detailed implementation details.
+
+
+## How to Set Up and Verify Auto-Startup
+
+1. **Make the Startup Script Executable**:
+   - Run the following command to make `startup.sh` executable:
+     ```bash
+     chmod +x startup.sh
+     ```
+
+2. **Edit Crontab for Auto-Startup**:
+   - Open the crontab editor:
+     ```bash
+     crontab -e
+     ```
+   - Add the following line to schedule the script to run at boot:
+     ```
+     @reboot /home/pi/open_rover/startup.sh > /home/pi/open_rover/rover.log 2>&1
+     ```
+
+3. **Verify Crontab Entry**:
+   - Check if the crontab entry was added successfully:
+     ```bash
+     crontab -l
+     ```
+
+4. **Reboot and Test**:
+   - Reboot the Raspberry Pi to test the auto-startup:
+     ```bash
+     sudo reboot
+     ```
+
+5. **Check the Logs**:
+   - After rebooting, read the logs to ensure the script ran correctly:
+     ```bash
+     cat /home/pi/open_rover/rover.log
+     ```
+
+6. **Confirm the Web Server is Running**:
+   - Verify that the Python web server is running:
+     ```bash
+     ps aux | grep python
+     ```
+   - You should see an output similar to:
+     ```
+     pi         628  6.5  5.0 848080 21436 ?        Sl   12:03   0:08 python webserver.py
+     pi        2216  0.0  0.4   6088  1792 pts/0    S+   12:05   0:00 grep --color=auto python
+     ```
+
+7. **Kill webserver**:
+    ```python
+      kill <PID>
+    ```
