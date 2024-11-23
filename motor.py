@@ -91,7 +91,7 @@ class MotorDriver:
             # Set right motor to maximum forward power minus rightward power.
             rightward = min(forward_abs, rightward)
             left_motor_power = forward_abs
-            right_motor_power = forward_abs - rightward
+            right_motor_power = forward_abs - (rightward * 0.8)
 
         if rightward < 0:
             # Limit rightward to not exceed forward_abs.
@@ -99,7 +99,7 @@ class MotorDriver:
             # Set left motor to maximum forward power plus the negative rightward power.
             rightward = (-1) * min(forward_abs, abs(rightward))
             right_motor_power = forward_abs
-            left_motor_power = forward_abs + rightward
+            left_motor_power = forward_abs + (rightward * 0.8)
 
         # Apply the calculated duty cycles to PWM
         self.pwm_right.ChangeDutyCycle(right_motor_power)
