@@ -42,7 +42,7 @@ class RoverWebServer:
             coordinates = data.get('coordinates', (0, 0))
             forward, rightward = coordinates
             # if either of the coordinates is less than 15% then set it to zero
-            forward = 0 if (-20 <= forward <= 20) & (-15 <= rightward <= 15) else forward
+            forward = 0 if (-20 <= forward <= 20) else forward
             rightward = 0 if (-15 <= rightward <= 15) else rightward
         
             print(f"JOYSTICK: forward {forward}%, rightward {rightward}%")
