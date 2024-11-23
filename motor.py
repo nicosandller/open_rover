@@ -79,13 +79,31 @@ class MotorDriver:
         # Ensure forward and rightward values are within the range -100 to 100
         forward = max(-100, min(100, forward))
         rightward = max(-100, min(100, rightward))
+        is_spinning = False
 
         # Configure the motors to move in one direction based on the sign of forward
         # The sign of "forward" doesn't matter for right-left calculations.
         forward_abs = self._set_motor_direction(forward)
         print(f"Initial | forward: {forward}, rightward: {rightward}, forward_abs: {forward_abs}")
 
-        if rightward >= 0:
+        if -20 <= forward <= 20 and (rightward < -90 or rightward > 90):
+            if rightward > 90:
+                # Spin right
+                left_motor_power = 90
+                right_motor_power = 0
+                print("Spinning right")
+            else:
+                # Spin left
+                left_motor_power = 0
+                right_motor_power = 90
+                print("Spinning left")
+
+            is_spinning = True
+
+        if is_spinning:
+            print("Spinning!")
+
+        elif rightward >= 0:
             # Limit rightward to not exceed forward_abs.
             # Set left motor to maximum forward power.
             # Set right motor to maximum forward power minus rightward power.
@@ -93,7 +111,7 @@ class MotorDriver:
             left_motor_power = forward_abs
             right_motor_power = forward_abs - (rightward * 0.8)
 
-        if rightward < 0:
+        elif rightward < 0:
             # Limit rightward to not exceed forward_abs.
             # Set right motor to maximum forward power.
             # Set left motor to maximum forward power plus the negative rightward power.
