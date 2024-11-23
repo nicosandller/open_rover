@@ -89,13 +89,13 @@ class MotorDriver:
         if -20 <= forward <= 20 and (rightward < -90 or rightward > 90):
             if rightward > 90:
                 # Spin right
-                left_motor_power = 90
-                right_motor_power = 0
+                left_motor_power = 0
+                right_motor_power = 90
                 print("Spinning right")
             else:
                 # Spin left
-                left_motor_power = 0
-                right_motor_power = 90
+                left_motor_power = 90
+                right_motor_power = 0
                 print("Spinning left")
 
             is_spinning = True
