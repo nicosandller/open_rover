@@ -48,7 +48,7 @@ class RoverWebServer:
             print(f"JOYSTICK: forward {forward}%, rightward {rightward}%")
     
             if self.motors_on:
-                if (forward==0):
+                if (forward==0) & (rightward==0):
                     self.motor_driver.stop()
                 else:
                     self.motor_driver.move(forward, rightward)
