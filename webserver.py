@@ -9,7 +9,7 @@ from motor import MotorDriver
 from camera import CameraHandler
 
 class RoverWebServer:
-    def __init__(self, motor_driver, camera_handler, led_pin=25):
+    def __init__(self, motor_driver, camera_handler, led_pin=25, camera_angle_pin=13):
         self.app = Flask(__name__)
         self.socketio = SocketIO(self.app)
         self.camera_handler = camera_handler
@@ -20,10 +20,17 @@ class RoverWebServer:
         self.lights_on = False 
         self._setup_routes()
 
+        # Servos
+        GPIO.setmode(GPIO.BCM)
+
         # setup rover lights pin as output
         self.led_pin = led_pin
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(led_pin, GPIO.OUT)
+
+        # Setup camera angle control servo GPIO 13
+        GPIO.setup(camera_angle_pin, GPIO.OUT)
+        self.pwm_camera_angle = GPIO.PWM(camera_angle_pin, 50)  # Frequency set to 50Hz
+        self.pwm_camera_angle.start(0)
 
     def _setup_routes(self):
         @self.app.route('/')
@@ -90,6 +97,20 @@ class RoverWebServer:
             else:
                 GPIO.output(self.led_pin, GPIO.LOW)
 
+        @self.socketio.on('camera_tilt')
+        def handle_camera_tilt(data):
+            # 0 is camera safe position | 90 is front view  | 180 is ceiling view |  240 is back view
+            # Get the tilt angle from data
+            tilt_angle = data.get('angle', 90)  # Default to 90 if not provided
+
+            # Ensure the angle is within the valid range (0 to 240)
+            tilt_angle = max(0, min(240, tilt_angle))
+
+            # Apply the angle to the servo control pin
+            # Assuming self.servo_pwm is a PWM instance controlling the servo
+            duty_cycle = (tilt_angle / 36) + 2 # converting angle to duty cycle
+            self.pwm_camera_angle.ChangeDutyCycle(duty_cycle)
+            print(f"Camera tilt set to {tilt_angle} degrees")
 
     def generate_frames(self):
         while True:
@@ -109,7 +130,8 @@ class RoverWebServer:
 
 
 if __name__ == "__main__":
-    motor_driver = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
+    # TODO: change enb_pin to GPIO18 (shares same PWM channel as GPIO12) - This is the left motor
+    motor_driver = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=18)
     camera_driver = CameraHandler(width=960, height=540, fps=30)
 
     web_server = RoverWebServer(motor_driver, camera_driver, 25)

@@ -141,7 +141,8 @@ class MotorDriver:
 
 
 if __name__ == "__main__":
-    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=13)
+    # TODO: change enb_pin to GPIO18 (shares same PWM channel as GPIO12) - This is the left motor
+    motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=18)
     motor.stop()
 
     print("Test 1: Move forward 50%")
