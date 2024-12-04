@@ -97,20 +97,20 @@ class RoverWebServer:
             else:
                 GPIO.output(self.led_pin, GPIO.LOW)
 
-        @self.socketio.on('camera_tilt')
-        def handle_camera_tilt(data):
-            # 0 is camera safe position | 90 is front view  | 180 is ceiling view |  240 is back view
-            # Get the tilt angle from data
-            tilt_angle = data.get('angle', 90)  # Default to 90 if not provided
+        # @self.socketio.on('camera_tilt')
+        # def handle_camera_tilt(data):
+        #     # 0 is camera safe position | 90 is front view  | 180 is ceiling view |  240 is back view
+        #     # Get the tilt angle from data
+        #     tilt_angle = data.get('angle', 90)  # Default to 90 if not provided
 
-            # Ensure the angle is within the valid range (0 to 240)
-            tilt_angle = max(0, min(240, tilt_angle))
+        #     # Ensure the angle is within the valid range (0 to 240)
+        #     tilt_angle = max(0, min(240, tilt_angle))
 
-            # Apply the angle to the servo control pin
-            # Assuming self.servo_pwm is a PWM instance controlling the servo
-            duty_cycle = (tilt_angle / 36) + 2 # converting angle to duty cycle
-            self.pwm_camera_angle.ChangeDutyCycle(duty_cycle)
-            print(f"Camera tilt set to {tilt_angle} degrees")
+        #     # Apply the angle to the servo control pin
+        #     # Assuming self.servo_pwm is a PWM instance controlling the servo
+        #     duty_cycle = (tilt_angle / 36) + 2 # converting angle to duty cycle
+        #     self.pwm_camera_angle.ChangeDutyCycle(duty_cycle)
+        #     print(f"Camera tilt set to {tilt_angle} degrees")
 
     def generate_frames(self):
         while True:
@@ -130,19 +130,14 @@ class RoverWebServer:
 
 
 if __name__ == "__main__":
-    # TODO: change enb_pin to GPIO18 (shares same PWM channel as GPIO12) - This is the left motor
     motor_driver = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=18)
     camera_driver = CameraHandler(width=960, height=540, fps=30)
-
     web_server = RoverWebServer(motor_driver, camera_driver, 25)
 
     print("Initializing system...")
-    # TODO: Add any necessary initialization logic here
+    # TODO: Add any necessary initialization logic here:  
+    # check battery voltage
     time.sleep(2)
-
     print("Initialization complete. Starting webserver...")
-    # Start the web server in a separate process
-    # web_server_process = multiprocessing.Process(target=self.web_server.start)
-    # web_server_process.start()
     web_server.start()
     print("Web server started. Access the rover's control interface via the web browser on http://raspberrypi.local:5001")
