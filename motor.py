@@ -108,6 +108,7 @@ class MotorDriver:
             left_motor_direction = 'forward' if rightward > 0 else 'backward'
             right_motor_direction = 'backward' if rightward < 0 else 'forward'
 
+            print(f"Left motor direction: {left_motor_direction}, Right motor direction: {right_motor_direction}")
             self._set_motor_direction('left', left_motor_direction)
             self._set_motor_direction('right', right_motor_direction)
 
