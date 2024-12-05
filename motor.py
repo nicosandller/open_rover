@@ -80,44 +80,50 @@ class MotorDriver:
         forward = max(-100, min(100, forward))
         rightward = max(-100, min(100, rightward))
         is_spinning = False
+        print(f"Initial | forward: {forward}, rightward: {rightward}")
 
-        # Configure the motors to move in one direction based on the sign of forward
-        # The sign of "forward" doesn't matter for right-left calculations.
-        forward_abs = self._set_motor_direction(forward)
-        print(f"Initial | forward: {forward}, rightward: {rightward}, forward_abs: {forward_abs}")
+        # # Configure the motors to move in one direction based on the sign of forward
+        # # The sign of "forward" doesn't matter for right-left calculations.
+        # forward_abs = self._set_motor_direction(forward)
+        
 
-        if -20 <= forward <= 20 and (rightward < -90 or rightward > 90):
-            if rightward > 90:
-                # Spin right
-                left_motor_power = 0
-                right_motor_power = 90
-                print("Spinning right")
-            else:
-                # Spin left
-                left_motor_power = 90
-                right_motor_power = 0
-                print("Spinning left")
-
+        # SPIN move: forward has to be within 20. Rightward more thant 20.
+        if -20 <= forward <= 20 and (rightward < -20 or rightward > 20):
             is_spinning = True
+            left_motor_forward = rightward > 0
+            right_motor_forward = not left_motor_forward
+
+            GPIO.output(self.in1, GPIO.HIGH if left_motor_forward else GPIO.LOW)
+            GPIO.output(self.in2, GPIO.LOW if left_motor_forward else GPIO.HIGH)
+            GPIO.output(self.in3, GPIO.LOW if right_motor_forward else GPIO.HIGH)
+            GPIO.output(self.in4, GPIO.HIGH if right_motor_forward else GPIO.LOW)
+
+            left_motor_power = rightward
+            right_motor_power = rightward
 
         if is_spinning:
-            print("Spinning!")
+            # set one motor forward and the other backwards
+            print("Spinning right" if left_motor_forward else "Spinning left")
 
-        elif rightward >= 0:
-            # Limit rightward to not exceed forward_abs.
-            # Set left motor to maximum forward power.
-            # Set right motor to maximum forward power minus rightward power.
-            rightward = min(forward_abs, rightward)
-            left_motor_power = forward_abs
-            right_motor_power = forward_abs - (rightward * 0.8)
+        else:
+            # Configure the motors to move in one direction based on the sign of forward
+            # The sign of "forward" doesn't matter for right-left calculations.
+            forward_abs = self._set_motor_direction(forward)
+            if rightward >= 0:
+                # Limit rightward to not exceed forward_abs.
+                # Set left motor to maximum forward power.
+                # Set right motor to maximum forward power minus rightward power.
+                rightward = min(forward_abs, rightward)
+                left_motor_power = forward_abs
+                right_motor_power = forward_abs - (rightward * 0.8)
 
-        elif rightward < 0:
-            # Limit rightward to not exceed forward_abs.
-            # Set right motor to maximum forward power.
-            # Set left motor to maximum forward power plus the negative rightward power.
-            rightward = (-1) * min(forward_abs, abs(rightward))
-            right_motor_power = forward_abs
-            left_motor_power = forward_abs + (rightward * 0.8)
+            elif rightward < 0:
+                # Limit rightward to not exceed forward_abs.
+                # Set right motor to maximum forward power.
+                # Set left motor to maximum forward power plus the negative rightward power.
+                rightward = (-1) * min(forward_abs, abs(rightward))
+                right_motor_power = forward_abs
+                left_motor_power = forward_abs + (rightward * 0.8)
 
         # Apply the calculated duty cycles to PWM
         self.pwm_right.ChangeDutyCycle(right_motor_power)
@@ -141,7 +147,7 @@ class MotorDriver:
 
 
 if __name__ == "__main__":
-    # TODO: change enb_pin to GPIO18 (shares same PWM channel as GPIO12) - This is the left motor
+    # GPIO18 shares same PWM channel as GPIO12
     motor = MotorDriver(in1_pin=24, in2_pin=23, ena_pin=12, in3_pin=22, in4_pin=27, enb_pin=18)
     motor.stop()
 
