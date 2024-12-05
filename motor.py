@@ -106,7 +106,7 @@ class MotorDriver:
         if -20 <= forward <= 20 and (rightward < -20 or rightward > 20):
             is_spinning = True
             left_motor_direction = 'forward' if rightward > 0 else 'backward'
-            right_motor_direction = 'backward' if rightward < 0 else 'forward'
+            right_motor_direction = 'backward' if rightward > 0 else 'forward'
 
             print(f"Left motor direction: {left_motor_direction}, Right motor direction: {right_motor_direction}")
             self._set_motor_direction('left', left_motor_direction)
