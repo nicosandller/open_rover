@@ -102,11 +102,6 @@ class MotorDriver:
         is_spinning = False
         print(f"Initial | forward: {forward}, rightward: {rightward}")
 
-        # # Configure the motors to move in one direction based on the sign of forward
-        # # The sign of "forward" doesn't matter for right-left calculations.
-        # forward_abs = self._set_direction(forward)
-        
-
         # SPIN move: forward has to be within 20. Rightward more thant 20.
         if -20 <= forward <= 20 and (rightward < -20 or rightward > 20):
             is_spinning = True
@@ -116,8 +111,8 @@ class MotorDriver:
             self._set_motor_direction('left', left_motor_direction)
             self._set_motor_direction('right', right_motor_direction)
 
-            left_motor_power = rightward
-            right_motor_power = rightward
+            left_motor_power = abs(rightward)
+            right_motor_power = abs(rightward)
 
         if is_spinning:
             # set one motor forward and the other backwards
