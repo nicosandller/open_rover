@@ -47,21 +47,41 @@ class MotorDriver:
         self.pwm_right.start(0)
         self.pwm_left.start(0)
 
-    def _set_motor_direction(self, forward):
+    def _set_motor_direction(self, motor, direction):
+        """
+        Set the direction for a motor based on the direction string.
+
+        Parameters:
+        motor (str): 'right' or 'left' to specify which motor to control.
+        direction (str): Direction indicator. 'forward' for forward, 'backward' for backward.
+        """
+        if motor == 'right':
+            in1, in2 = self.in1, self.in2
+        elif motor == 'left':
+            in1, in2 = self.in3, self.in4
+        else:
+            raise ValueError("Motor must be 'right' or 'left'")
+
+        if direction == 'forward':
+            GPIO.output(in1, GPIO.HIGH)
+            GPIO.output(in2, GPIO.LOW)
+        elif direction == 'backward':
+            GPIO.output(in1, GPIO.LOW)
+            GPIO.output(in2, GPIO.HIGH)
+        else:
+            raise ValueError("Direction must be 'forward' or 'backward'")
+
+    def _set_direction(self, forward):
         """
         Set the direction for both motors based on the sign of forward.
         """
         if forward > 0:  # Forward
-            GPIO.output(self.in1, GPIO.HIGH)
-            GPIO.output(self.in2, GPIO.LOW)
-            GPIO.output(self.in3, GPIO.HIGH)
-            GPIO.output(self.in4, GPIO.LOW)
+            self._set_motor_direction('right', 'forward')
+            self._set_motor_direction('left', 'forward')
             print("Moving forward")
         else:  # Backward
-            GPIO.output(self.in1, GPIO.LOW)
-            GPIO.output(self.in2, GPIO.HIGH)
-            GPIO.output(self.in3, GPIO.LOW)
-            GPIO.output(self.in4, GPIO.HIGH)
+            self._set_motor_direction('right', 'backward')
+            self._set_motor_direction('left', 'backward')
             print("Moving backward")
 
         return abs(forward)
@@ -84,31 +104,29 @@ class MotorDriver:
 
         # # Configure the motors to move in one direction based on the sign of forward
         # # The sign of "forward" doesn't matter for right-left calculations.
-        # forward_abs = self._set_motor_direction(forward)
+        # forward_abs = self._set_direction(forward)
         
 
         # SPIN move: forward has to be within 20. Rightward more thant 20.
         if -20 <= forward <= 20 and (rightward < -20 or rightward > 20):
             is_spinning = True
-            left_motor_forward = rightward > 0
-            right_motor_forward = not left_motor_forward
+            left_motor_direction = 'forward' if rightward > 0 else 'backward'
+            right_motor_direction = 'backward' if rightward < 0 else 'forward'
 
-            GPIO.output(self.in1, GPIO.HIGH if left_motor_forward else GPIO.LOW)
-            GPIO.output(self.in2, GPIO.LOW if left_motor_forward else GPIO.HIGH)
-            GPIO.output(self.in3, GPIO.LOW if right_motor_forward else GPIO.HIGH)
-            GPIO.output(self.in4, GPIO.HIGH if right_motor_forward else GPIO.LOW)
+            self._set_motor_direction('left', left_motor_direction)
+            self._set_motor_direction('right', right_motor_direction)
 
             left_motor_power = rightward
             right_motor_power = rightward
 
         if is_spinning:
             # set one motor forward and the other backwards
-            print("Spinning right" if left_motor_forward else "Spinning left")
+            print("Spinning right" if left_motor_direction=='forward' else "Spinning left")
 
         else:
             # Configure the motors to move in one direction based on the sign of forward
             # The sign of "forward" doesn't matter for right-left calculations.
-            forward_abs = self._set_motor_direction(forward)
+            forward_abs = self._set_direction(forward)
             if rightward >= 0:
                 # Limit rightward to not exceed forward_abs.
                 # Set left motor to maximum forward power.
