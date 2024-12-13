@@ -112,8 +112,9 @@ class MotorDriver:
             self._set_motor_direction('left', left_motor_direction)
             self._set_motor_direction('right', right_motor_direction)
 
-            left_motor_power = abs(rightward)
-            right_motor_power = abs(rightward)
+            # Limits spin motion to 75% cycle
+            left_motor_power = min(abs(rightward), 75)
+            right_motor_power = min(abs(rightward), 75)
 
         if is_spinning:
             # set one motor forward and the other backwards
